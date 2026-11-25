@@ -14,7 +14,7 @@ Every day there is one finished print: a 5x5 sheet of red, blue, yellow (and on 
 
 ## How the daily content is made
 
-- Each UTC date is hashed (FNV-1a, `overprint:v1:YYYY-MM-DD`) into a seed for a small deterministic PRNG (mulberry32).
+- Each UTC date is hashed (FNV-1a, `overprint:v2:YYYY-MM-DD`) into a seed for a small deterministic PRNG (mulberry32).
 - The weekday sets the difficulty band: Monday 2 stamps / par 2-3, rising to Saturday 4 stamps / par 6-8.
 - The generator picks stamp shapes from a fixed library, presses them at seeded positions and keeps the sheet only if it passes the band and quality rules (every stamp needed, something is buried, enough ink on the sheet).
 - A solver works backwards ("peeling": the last press must show its ink everywhere it is not covered later) with a breadth-first search, so the par it reports is the provable minimum.

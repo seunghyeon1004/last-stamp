@@ -91,7 +91,6 @@ function ResultCard({
 
 export function App() {
   const [server, setServer] = useState<StateResponse | null>(null);
-  const [loaded, setLoaded] = useState(false);
   const date = server?.date ?? postDate() ?? utcDateKey();
   const puzzle = useMemo(() => puzzleFor(isDateKey(date) ? date : utcDateKey()), [date]);
 
@@ -102,31 +101,21 @@ export function App() {
   const [comparing, setComparing] = useState(false);
   const [finished, setFinished] = useState<Finished | null>(null);
   const [showCard, setShowCard] = useState(false);
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(0);
 
+  // Load the server state, then restore a finished sheet or an unfinished draft.
   useEffect(() => {
     void fetchState().then((s) => {
       setServer(s);
-      setLoaded(true);
+      if (s?.result) {
+        setFinished({ result: s.result, player: s.player, stats: s.stats, countedForStreak: s.date === s.today });
+        setDraft({ presses: s.result.log ?? [], undos: 0, startedAt: null });
+        return;
+      }
+      const d = loadDraft<Draft>(s?.date ?? postDate() ?? utcDateKey());
+      if (d && Array.isArray(d.presses)) setDraft(d);
     });
   }, []);
-
-  // Restore an unfinished sheet, or show a finished one.
-  useEffect(() => {
-    if (!loaded) return;
-    if (server?.result) {
-      setFinished({
-        result: server.result,
-        player: server.player,
-        stats: server.stats,
-        countedForStreak: server.date === server.today,
-      });
-      setDraft({ presses: server.result.log ?? [], undos: 0, startedAt: null });
-      return;
-    }
-    const d = loadDraft<Draft>(puzzle.date);
-    if (d && Array.isArray(d.presses)) setDraft(d);
-  }, [loaded, server, puzzle]);
 
   useEffect(() => {
     if (!finished && draft.presses.length > 0) saveDraft(puzzle.date, draft);
@@ -203,7 +192,7 @@ export function App() {
   };
 
   const uses = (id: string) => draft.presses.filter((p) => p.stamp === id).length;
-  const elapsed = draft.startedAt && !finished ? now - draft.startedAt : 0;
+  const elapsed = draft.startedAt && !finished ? Math.max(0, now - draft.startedAt) : 0;
 
   let hint = 'Pick a stamp below.';
   if (finished) hint = 'Printed. Come back tomorrow for a new sheet.';

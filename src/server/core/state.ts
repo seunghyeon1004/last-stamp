@@ -1,5 +1,5 @@
 import { redis } from '@devvit/web/server';
-import { addDays } from '../../shared/daily';
+import { liveStreak, nextStreak } from '../../shared/streak';
 import type { DayStats, MyResult, PlayerStats } from '../../shared/api';
 
 // Redis layout (all small hashes):
@@ -40,13 +40,6 @@ export async function setDailyComment(date: string, commentId: string): Promise<
   await redis.hSet(k.daily(date), { commentId });
 }
 
-/** Streak as the player sees it today: a streak whose last day is before yesterday is broken. */
-export function liveStreak(raw: { streak: number; last: string | null }, today: string): number {
-  if (!raw.last) return 0;
-  if (raw.last === today || raw.last === addDays(today, -1)) return raw.streak;
-  return 0;
-}
-
 export async function getPlayer(userId: string, today: string): Promise<PlayerStats> {
   const h = await redis.hGetAll(k.user(userId));
   const last = h.last ?? null;
@@ -70,13 +63,6 @@ export async function getStats(date: string): Promise<DayStats> {
   const histogram: Record<string, number> = {};
   for (const [presses, n] of Object.entries(hist)) histogram[presses] = Number(n);
   return { solvers: Number(stat.solvers ?? 0), atPar: Number(stat.atPar ?? 0), histogram };
-}
-
-/** Next streak value when a player completes `date` (only called for today's puzzle). */
-export function nextStreak(prev: { streak: number; last: string | null }, date: string): number {
-  if (prev.last === date) return prev.streak;
-  if (prev.last === addDays(date, -1)) return prev.streak + 1;
-  return 1;
 }
 
 /**

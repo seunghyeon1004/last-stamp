@@ -4,6 +4,7 @@ import {
   SHAPES,
   SIZE,
   fits,
+  footprint,
   shapeOf,
   simulate,
   solve,
@@ -13,7 +14,7 @@ import {
   type Stamp,
 } from './engine';
 
-export const GENERATOR_VERSION = 1;
+export const GENERATOR_VERSION = 2;
 
 export type Puzzle = {
   date: string; // YYYY-MM-DD (UTC)
@@ -116,6 +117,28 @@ export function acceptable(c: Candidate, band: Band): boolean {
   if (covered <= inked) return false;
   // every ink in the tray shows on the sheet
   for (const s of c.stamps) if (!c.target.includes(s.ink)) return false;
+  // the presses form one connected composition (no stray island that is solved on its own)
+  const foot = c.solution.map((p) => footprint(shapeOf(c.stamps.find((s) => s.id === p.stamp)!.shape), p.row, p.col));
+  const touches = (a: number[], b: number[]) =>
+    a.some((i) => b.some((j) => i === j || (Math.abs(i - j) === 1 && Math.floor(i / SIZE) === Math.floor(j / SIZE)) || Math.abs(i - j) === SIZE));
+  const seen = new Set([0]);
+  const queue = [0];
+  while (queue.length) {
+    const a = queue.pop()!;
+    for (let b = 0; b < foot.length; b++)
+      if (!seen.has(b) && touches(foot[a]!, foot[b]!)) {
+        seen.add(b);
+        queue.push(b);
+      }
+  }
+  if (seen.size !== foot.length) return false;
+  // enough layering to deduce: at least half the presses are partly covered by a later press
+  let buried = 0;
+  for (let i = 0; i < foot.length; i++) {
+    const later = new Set(foot.slice(i + 1).flat());
+    if (foot[i]!.some((x) => later.has(x))) buried++;
+  }
+  if (buried < Math.floor(c.par / 2)) return false;
   return true;
 }
 

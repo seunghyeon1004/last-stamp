@@ -1,6 +1,6 @@
 import './styles.css';
 
-import { StrictMode, useEffect, useMemo, useState } from 'react';
+import { StrictMode, useEffect, useMemo, useState, type MouseEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import { requestExpandedMode } from '@devvit/web/client';
 import { isDateKey, puzzleFor, utcDateKey } from '../shared/daily';
@@ -19,7 +19,7 @@ export function Splash() {
   const puzzle = useMemo(() => puzzleFor(isDateKey(date) ? date : utcDateKey()), [date]);
   const done = server?.result ?? null;
 
-  const open = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const open = (e: MouseEvent<HTMLButtonElement>) => {
     try {
       requestExpandedMode(e.nativeEvent, 'game');
     } catch {
