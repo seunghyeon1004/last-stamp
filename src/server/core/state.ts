@@ -3,8 +3,8 @@ import { liveStreak, nextStreak } from '../../shared/streak';
 import type { DayStats, MyResult, PlayerStats } from '../../shared/api';
 
 // Redis layout (all small hashes):
-//   post:{postId}        { date }
-//   daily:{date}         { postId, commentId }
+//   post:{postId}        { date, commentId (the pinned results comment) }
+//   daily:{date}         { postId }
 //   user:{userId}        { streak, best, solved, pars, last }
 //   res:{date}           { [userId]: JSON MyResult }
 //   hist:{date}          { [presses]: count }
@@ -28,16 +28,16 @@ export async function linkPost(postId: string, date: string): Promise<void> {
   await redis.hSet(k.daily(date), { postId });
 }
 
-export async function getDaily(date: string): Promise<{ postId?: string; commentId?: string }> {
-  const h = await redis.hGetAll(k.daily(date));
-  const out: { postId?: string; commentId?: string } = {};
-  if (h.postId) out.postId = h.postId;
-  if (h.commentId) out.commentId = h.commentId;
-  return out;
+export async function getDailyPostId(date: string): Promise<string | undefined> {
+  return (await redis.hGet(k.daily(date), 'postId')) ?? undefined;
 }
 
-export async function setDailyComment(date: string, commentId: string): Promise<void> {
-  await redis.hSet(k.daily(date), { commentId });
+export async function getPostComment(postId: string): Promise<string | undefined> {
+  return (await redis.hGet(k.post(postId), 'commentId')) ?? undefined;
+}
+
+export async function setPostComment(postId: string, commentId: string): Promise<void> {
+  await redis.hSet(k.post(postId), { commentId });
 }
 
 export async function getPlayer(userId: string, today: string): Promise<PlayerStats> {

@@ -1,4 +1,4 @@
-import type { CompleteRequest, CompleteResponse, StateResponse } from '../shared/api';
+import type { CompleteRequest, CompleteResponse, ShareResponse, StateResponse } from '../shared/api';
 
 export async function fetchState(): Promise<StateResponse | null> {
   try {
@@ -48,5 +48,16 @@ export function clearDraft(date: string): void {
     localStorage.removeItem(`overprint:draft:${date}`);
   } catch {
     /* ignore */
+  }
+}
+
+export async function shareResult(): Promise<{ ok: true } | { ok: false; message: string }> {
+  try {
+    const res = await fetch('/api/share', { method: 'POST' });
+    const data = (await res.json()) as ShareResponse | { status: 'error'; message: string };
+    if (res.ok && 'type' in data) return { ok: true };
+    return { ok: false, message: 'message' in data ? data.message : 'Could not comment' };
+  } catch {
+    return { ok: false, message: 'Could not reach the server' };
   }
 }

@@ -1,13 +1,14 @@
 import './styles.css';
 
-import { StrictMode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { StrictMode, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { canRunAsUser, showToast } from '@devvit/web/client';
 import { createRoot } from 'react-dom/client';
 import { puzzleFor, utcDateKey, isDateKey } from '../shared/daily';
 import { INKS, sameSheet, simulate, type Ink, type Press, type Stamp } from '../shared/engine';
 
 const isInk = (x: string): x is Ink => (INKS as readonly string[]).includes(x);
 import type { DayStats, MyResult, PlayerStats, StateResponse } from '../shared/api';
-import { clearDraft, fetchState, loadDraft, saveDraft, sendComplete } from './api';
+import { clearDraft, fetchState, loadDraft, saveDraft, sendComplete, shareResult } from './api';
 import { Sheet, placeAt } from './Sheet';
 import { StampButton } from './StampButton';
 import { InkChip } from './ink';
@@ -32,6 +33,8 @@ function ResultCard({
   countedForStreak,
   offline,
   onClose,
+  onShare,
+  shareState,
 }: {
   result: MyResult;
   player: PlayerStats | null;
@@ -39,6 +42,8 @@ function ResultCard({
   countedForStreak: boolean;
   offline: boolean;
   onClose: () => void;
+  onShare: (e: MouseEvent<HTMLButtonElement>) => void;
+  shareState: 'idle' | 'busy' | 'done';
 }) {
   const atParPct = stats && stats.solvers > 0 ? Math.round((stats.atPar / stats.solvers) * 100) : null;
   return (
@@ -81,10 +86,18 @@ function ResultCard({
               : "This is an older print, so it doesn't change your streak."}
       </p>
       <div className="result-actions">
+        {!offline && player && (
+          <button type="button" className="btn btn-quiet" onClick={onShare} disabled={shareState !== 'idle'}>
+            {shareState === 'done' ? 'Commented' : shareState === 'busy' ? 'Posting…' : 'Comment my result'}
+          </button>
+        )}
         <button type="button" className="btn btn-ink" onClick={onClose}>
-          Look at my sheet
+          See my sheet
         </button>
       </div>
+      {!offline && player && shareState === 'idle' && (
+        <p className="result-fine">Comment my result replies as you, under the pinned results comment on this post.</p>
+      )}
     </section>
   );
 }
@@ -102,6 +115,26 @@ export function App() {
   const [finished, setFinished] = useState<Finished | null>(null);
   const [showCard, setShowCard] = useState(false);
   const [now, setNow] = useState(0);
+  const [shareState, setShareState] = useState<'idle' | 'busy' | 'done'>('idle');
+
+  const onShare = (e: MouseEvent<HTMLButtonElement>) => {
+    setShareState('busy');
+    const native = e.nativeEvent;
+    void (async () => {
+      try {
+        await canRunAsUser(native);
+      } catch {
+        /* older clients: the server call below still decides */
+      }
+      const r = await shareResult();
+      setShareState(r.ok ? 'done' : 'idle');
+      try {
+        showToast(r.ok ? 'Your result is in the comments' : r.message);
+      } catch {
+        /* no toast outside Reddit */
+      }
+    })();
+  };
 
   // Load the server state, then restore a finished sheet or an unfinished draft.
   useEffect(() => {
@@ -298,6 +331,8 @@ export function App() {
               countedForStreak={finished.countedForStreak}
               offline={offline}
               onClose={() => setShowCard(false)}
+              onShare={onShare}
+              shareState={shareState}
             />
           </div>
         </div>

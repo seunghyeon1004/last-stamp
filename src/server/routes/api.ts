@@ -2,8 +2,11 @@ import { Hono } from 'hono';
 import { context, reddit } from '@devvit/web/server';
 import { isDateKey, puzzleFor, utcDateKey } from '../../shared/daily';
 import { CELLS, SIZE, sameSheet, simulate, type Press } from '../../shared/engine';
-import type { CompleteRequest, CompleteResponse, ErrorResponse, StateResponse } from '../../shared/api';
+import type { CompleteRequest, CompleteResponse, ErrorResponse, ShareResponse, StateResponse } from '../../shared/api';
 import { getPlayer, getPostDate, getResult, getStats, linkPost, recordResult } from '../core/state';
+import { ensureSticky } from '../core/post';
+import { isT1 } from '../core/ids';
+import { shareText } from '../../shared/share';
 
 export const api = new Hono();
 
@@ -95,4 +98,23 @@ api.post('/complete', async (c) => {
     stats,
     countedForStreak,
   });
+});
+
+// Explicit, player-pressed action: reply to the pinned results comment as the player.
+api.post('/share', async (c) => {
+  const { postId, userId } = context;
+  if (!postId || !userId) return c.json(fail('log in to comment'), 400);
+  const today = utcDateKey();
+  const date = await dateForPost(postId, today);
+  const result = await getResult(date, userId);
+  if (!result) return c.json(fail('finish the print first'), 400);
+  const stickyId = await ensureSticky(postId);
+  if (!stickyId || !isT1(stickyId)) return c.json(fail('no results thread on this post'), 500);
+  const puzzle = puzzleFor(date);
+  const comment = await reddit.submitComment({
+    id: stickyId,
+    text: shareText(puzzle.number, result),
+    runAs: 'USER',
+  });
+  return c.json<ShareResponse>({ type: 'share', commentId: comment.id });
 });

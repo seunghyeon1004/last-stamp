@@ -49,3 +49,5 @@ export type CompleteResponse = {
 };
 
 export type ErrorResponse = { status: 'error'; message: string };
+
+export type ShareResponse = { type: 'share'; commentId: string };

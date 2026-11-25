@@ -1,6 +1,7 @@
 import { context, reddit } from '@devvit/web/server';
 import { puzzleFor, utcDateKey } from '../../shared/daily';
-import { getDaily, linkPost, setDailyComment } from './state';
+import { getDailyPostId, getPostComment, linkPost, setPostComment } from './state';
+import { isT3 } from './ids';
 
 const WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -13,8 +14,8 @@ export function postTitle(date: string): string {
 
 /** Creates the daily post for `date` once; returns the existing post id when already made. */
 export async function ensureDailyPost(date: string = utcDateKey()): Promise<{ postId: string; created: boolean }> {
-  const existing = await getDaily(date);
-  if (existing.postId) return { postId: existing.postId, created: false };
+  const existing = await getDailyPostId(date);
+  if (existing) return { postId: existing, created: false };
   const post = await reddit.submitCustomPost({
     title: postTitle(date),
     entry: 'default',
@@ -22,19 +23,33 @@ export async function ensureDailyPost(date: string = utcDateKey()): Promise<{ po
     textFallback: { text: `Overprint daily print for ${date}. Open this post in the Reddit app or on reddit.com to play.` },
   });
   await linkPost(post.id, date);
+  await ensureSticky(post.id);
+  return { postId: post.id, created: true };
+}
+
+/** The one pinned comment per daily post that score replies go under. Created by the app account. */
+export async function ensureSticky(postId: string): Promise<string | null> {
+  const existing = await getPostComment(postId);
+  if (existing) return existing;
+  if (!isT3(postId)) return null;
   try {
     const comment = await reddit.submitComment({
-      id: post.id,
+      id: postId,
       text:
-        `Today's print is up. Reply here with your result (the game has a button for it), ` +
-        `and argue about which ink went down first.`,
+        `Results go here. Use "Comment my result" in the game to reply with your press count, ` +
+        `or reply with your theory about which ink went down first.`,
     });
-    await comment.distinguish(true);
-    await setDailyComment(date, comment.id);
+    try {
+      await comment.distinguish(true);
+    } catch (err) {
+      console.error('could not sticky the results comment', err);
+    }
+    await setPostComment(postId, comment.id);
+    return comment.id;
   } catch (err) {
-    console.error('sticky comment failed', err);
+    console.error('results comment failed', err);
+    return null;
   }
-  return { postId: post.id, created: true };
 }
 
 export function subredditName(): string {
