@@ -3,7 +3,7 @@ import { puzzleFor, utcDateKey } from '../src/shared/daily';
 import { SIZE } from '../src/shared/engine';
 import { placeAt } from '../src/client/Sheet';
 
-const SHOTS = '../docs/screens';
+const SHOTS = 'docs/screens';
 
 async function tapCell(page: Page, row: number, col: number) {
   const box = (await page.locator('svg.work-sheet').boundingBox())!;
@@ -53,12 +53,22 @@ test('fits one viewport and solves today at par', async ({ page }, info) => {
   await page.screenshot({ path: `${SHOTS}/game-result-${info.project.name}.png` });
 });
 
-test('splash shows the date and par', async ({ page }, info) => {
+test('splash puts the puzzle first and fits the inline post', async ({ page }, info) => {
   const puzzle = puzzleFor(utcDateKey());
-  await page.setViewportSize({ width: info.project.name === 'phone' ? 412 : 700, height: 512 });
-  await page.goto('/splash.html');
-  await expect(page.locator('.splash-line')).toContainText(`Par ${puzzle.par}`);
-  await page.screenshot({ path: `${SHOTS}/splash-${info.project.name}.png` });
+  const sizes = info.project.name === 'phone' ? [{ width: 390, height: 512 }, { width: 360, height: 440 }] : [{ width: 730, height: 512 }];
+  for (const size of sizes) {
+    await page.setViewportSize(size);
+    await page.goto('/splash.html');
+    await expect(page.locator('.splash-challenge')).toContainText(`Par ${puzzle.par}`);
+    await expect(page.locator('.eq-stamp')).toHaveCount(puzzle.stamps.length);
+    const overflow = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+    expect(overflow).toBeLessThanOrEqual(0);
+    // the target print is the biggest thing on the card
+    const sheet = (await page.locator('.splash-sheet').boundingBox())!;
+    const mark = (await page.locator('.wordmark').boundingBox())!;
+    expect(sheet.height).toBeGreaterThan(mark.height * 5);
+    await page.screenshot({ path: `${SHOTS}/splash-after-${info.project.name}-${size.width}x${size.height}.png` });
+  }
 });
 
 test('re-tapping the selected stamp keeps it selected', async ({ page }) => {

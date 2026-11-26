@@ -530,7 +530,7 @@ svg.coach {
   color: var(--ink-soft);
 }
 
-/* ---------- splash (inline post) ---------- */
+/* ---------- splash (inline post): the puzzle is the headline ---------- */
 
 .splash {
   height: 100%;
@@ -538,31 +538,111 @@ svg.coach {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  padding: 16px;
+  gap: clamp(8px, 2.2vh, 14px);
+  padding: 12px 16px;
   text-align: center;
 }
 
-.splash-head .issue {
-  margin-top: 6px;
+.splash-mast {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
 }
 
-.splash-proof {
+.wordmark-sm {
+  font-size: 15px;
+  text-shadow: 1px 1px 0 var(--red);
+}
+
+.splash-mast .issue {
   margin: 0;
-  width: min(42vw, 42vh, 200px);
+  font-size: 11px;
+}
+
+.splash-challenge {
+  margin: 0;
+  font-size: clamp(20px, 5.6vw, 28px);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  max-width: 22ch;
+}
+
+.splash-par {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 1px 8px 2px;
+  font-size: 0.72em;
+  vertical-align: 0.12em;
+  background: var(--yellow);
+  border: 1.5px solid var(--ink);
+}
+
+.equation {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(8px, 3vw, 18px);
 }
 
 .splash-sheet {
   display: block;
-  width: 100%;
-  transform: rotate(-2deg);
-  box-shadow: 0 1px 0 var(--rule), 4px 5px 0 rgba(29, 29, 31, 0.14);
+  width: min(44vw, 40vh, 230px);
+  height: min(44vw, 40vh, 230px);
+  border: 2px solid var(--ink);
+  box-shadow: 3px 3px 0 rgba(29, 29, 31, 0.18);
 }
 
-.splash-line {
-  margin: 4px 0 0;
-  font-size: 16px;
-  max-width: 28ch;
+.eq-op {
+  font-size: clamp(28px, 8vw, 40px);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.eq-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.eq-stamps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 6px;
+}
+
+.eq-stamps.n2 {
+  grid-template-columns: auto;
+}
+
+.eq-stamp {
+  width: min(16vw, 13vh, 62px);
+  height: min(16vw, 13vh, 62px);
+  padding: 6px;
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  background: linear-gradient(160deg, #dcc8a6, #c9b088);
+}
+
+.eq-stamp svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.eq-presses {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+}
+
+.eq-presses b {
+  font-family: var(--display);
+  font-size: 20px;
 }
 
 .splash-meta {
@@ -570,6 +650,20 @@ svg.coach {
   font-family: var(--mono);
   font-size: 12px;
   color: var(--ink-soft);
+}
+
+/* wide inline posts (desktop feed): stamps sit in one row */
+@media (min-width: 560px) {
+  .eq-stamps,
+  .eq-stamps.n2 {
+    grid-template-columns: repeat(4, auto);
+  }
+  .eq-stamps.n2 {
+    grid-template-columns: repeat(2, auto);
+  }
+  .eq-stamps.n3 {
+    grid-template-columns: repeat(3, auto);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

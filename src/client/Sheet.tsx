@@ -46,9 +46,24 @@ type Props = {
   overlay?: readonly Cell[] | null | undefined;
   onPointerCell?: ((row: number, col: number, phase: 'down' | 'move' | 'up') => void) | undefined;
   className?: string | undefined;
+  /** Draw thin cell lines over the sheet so it reads as a puzzle grid. */
+  grid?: boolean | undefined;
 };
 
-export function Sheet({ id, label, stamps, flat, presses, ghost, overlay, onPointerCell, className }: Props) {
+function GridLines() {
+  const lines = [];
+  for (let k = 0; k <= SIZE; k++) {
+    lines.push(<line key={`h${k}`} x1={0} y1={k * U} x2={VB} y2={k * U} />);
+    lines.push(<line key={`v${k}`} x1={k * U} y1={0} x2={k * U} y2={VB} />);
+  }
+  return (
+    <g stroke="#1D1D1F" strokeOpacity="0.22" strokeWidth="2" pointerEvents="none">
+      {lines}
+    </g>
+  );
+}
+
+export function Sheet({ id, label, stamps, flat, presses, ghost, overlay, onPointerCell, className, grid }: Props) {
   const ref = useRef<SVGSVGElement>(null);
   const dragging = useRef(false);
 
@@ -153,6 +168,7 @@ export function Sheet({ id, label, stamps, flat, presses, ghost, overlay, onPoin
         </g>
       )}
 
+      {grid && <GridLines />}
       <rect x="-12" y="-12" width={VB + 24} height={VB + 24} filter={`url(#${id}-grain)`} pointerEvents="none" />
     </svg>
   );
