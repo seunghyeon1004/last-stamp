@@ -21,6 +21,7 @@ export type PlayerStats = {
   solved: number;
   pars: number;
   lastDay: string | null;
+  flair: string | null; // flair text the player chose to wear, if any
 };
 
 export type StateResponse = {
@@ -51,3 +52,5 @@ export type CompleteResponse = {
 export type ErrorResponse = { status: 'error'; message: string };
 
 export type ShareResponse = { type: 'share'; commentId: string };
+
+export type FlairResponse = { type: 'flair'; text: string };

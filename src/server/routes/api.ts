@@ -2,8 +2,10 @@ import { Hono } from 'hono';
 import { context, reddit } from '@devvit/web/server';
 import { isDateKey, puzzleFor, utcDateKey } from '../../shared/daily';
 import { CELLS, SIZE, sameSheet, simulate, type Press } from '../../shared/engine';
-import type { CompleteRequest, CompleteResponse, ErrorResponse, ShareResponse, StateResponse } from '../../shared/api';
-import { getPlayer, getPostDate, getResult, getStats, linkPost, recordResult } from '../core/state';
+import type { CompleteRequest, CompleteResponse, ErrorResponse, FlairResponse, ShareResponse, StateResponse } from '../../shared/api';
+import { getPlayer, getPostDate, getResult, getStats, linkPost, recordResult, setWornFlair } from '../core/state';
+import { endJourney } from './telemetry';
+import { flairText, titleFor } from '../../shared/titles';
 import { ensureSticky } from '../core/post';
 import { isT1 } from '../core/ids';
 import { shareText } from '../../shared/share';
@@ -80,6 +82,9 @@ api.post('/complete', async (c) => {
     log: body.presses.map((p) => ({ stamp: p.stamp, row: p.row, col: p.col })),
   };
 
+  // Journey.End carries the verified result (score = presses; win = finished at or under par).
+  await endJourney(c.req.header('x-devvit-journey-id'), result.presses <= puzzle.par, result.presses);
+
   if (!userId) {
     return c.json<CompleteResponse>({
       type: 'complete',
@@ -117,4 +122,25 @@ api.post('/share', async (c) => {
     runAs: 'USER',
   });
   return c.json<ShareResponse>({ type: 'share', commentId: comment.id });
+});
+
+// Explicit, player-pressed action: wear the earned title as user flair in this community.
+api.post('/flair', async (c) => {
+  const { userId, subredditName } = context;
+  if (!userId || !subredditName) return c.json(fail('log in to wear a title'), 400);
+  const username = await reddit.getCurrentUsername();
+  if (!username) return c.json(fail('log in to wear a title'), 400);
+  const player = await getPlayer(userId, utcDateKey());
+  const title = titleFor(player);
+  if (!title) return c.json(fail('finish a print first'), 400);
+  const text = flairText(title, player.streak);
+  await reddit.setUserFlair({
+    subredditName,
+    username,
+    text,
+    backgroundColor: title.bg,
+    textColor: title.text,
+  });
+  await setWornFlair(userId, text);
+  return c.json<FlairResponse>({ type: 'flair', text });
 });

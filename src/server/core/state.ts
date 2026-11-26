@@ -5,7 +5,7 @@ import type { DayStats, MyResult, PlayerStats } from '../../shared/api';
 // Redis layout (all small hashes):
 //   post:{postId}        { date, commentId (the pinned results comment) }
 //   daily:{date}         { postId }
-//   user:{userId}        { streak, best, solved, pars, last }
+//   user:{userId}        { streak, best, solved, pars, last, flair }
 //   res:{date}           { [userId]: JSON MyResult }
 //   hist:{date}          { [presses]: count }
 //   stat:{date}          { solvers, atPar }
@@ -50,6 +50,7 @@ export async function getPlayer(userId: string, today: string): Promise<PlayerSt
     solved: Number(h.solved ?? 0),
     pars: Number(h.pars ?? 0),
     lastDay: last,
+    flair: h.flair ?? null,
   };
 }
 
@@ -101,4 +102,24 @@ export async function recordResult(opts: {
   }
   await redis.hSet(k.user(userId), update);
   return { fresh: true, countedForStreak };
+}
+
+export async function getWornFlair(userId: string): Promise<string | undefined> {
+  return (await redis.hGet(k.user(userId), 'flair')) ?? undefined;
+}
+
+export async function setWornFlair(userId: string, flair: string): Promise<void> {
+  await redis.hSet(k.user(userId), { flair });
+}
+
+/** Post deleted: drop everything keyed by that post (date link, pinned comment id, daily pointer). */
+export async function forgetPost(postId: string): Promise<void> {
+  const date = await getPostDate(postId);
+  if (date && (await getDailyPostId(date)) === postId) await redis.hDel(k.daily(date), ['postId']);
+  await redis.del(k.post(postId));
+}
+
+/** Pinned results comment deleted: forget it so a new one can be made. */
+export async function forgetComment(postId: string, commentId: string): Promise<void> {
+  if ((await getPostComment(postId)) === commentId) await redis.hDel(k.post(postId), ['commentId']);
 }

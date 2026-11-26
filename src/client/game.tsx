@@ -4,18 +4,37 @@ import { StrictMode, useCallback, useEffect, useMemo, useRef, useState, type Mou
 import { canRunAsUser, showToast } from '@devvit/web/client';
 import { createRoot } from 'react-dom/client';
 import { puzzleFor, utcDateKey, isDateKey } from '../shared/daily';
-import { INKS, sameSheet, simulate, type Ink, type Press, type Stamp } from '../shared/engine';
-
-const isInk = (x: string): x is Ink => (INKS as readonly string[]).includes(x);
+import { INKS, sameSheet, simulate, type Cell, type Ink, type Press, type Stamp } from '../shared/engine';
 import type { DayStats, MyResult, PlayerStats, StateResponse } from '../shared/api';
-import { clearDraft, fetchState, loadDraft, saveDraft, sendComplete, shareResult } from './api';
+import { nextTitle, titleFor } from '../shared/titles';
+import { clearDraft, fetchState, loadDraft, saveDraft, sendComplete, shareResult, wearFlair } from './api';
+import { journey } from './journey';
 import { Sheet, placeAt } from './Sheet';
 import { StampButton } from './StampButton';
 import { InkChip } from './ink';
-import { duration, longDate, parLine } from './format';
+import { duration, longDate, parLine, untilNextPrint } from './format';
 import { postDate } from './context';
 
+const isInk = (x: string): x is Ink => (INKS as readonly string[]).includes(x);
+
 type Draft = { presses: Press[]; undos: number; startedAt: number | null };
+type Busy = 'idle' | 'busy' | 'done';
+
+function cellsToGo(sheet: readonly Cell[], target: readonly Cell[]): number {
+  let n = 0;
+  for (let i = 0; i < target.length; i++) if (sheet[i] !== target[i]) n++;
+  return n;
+}
+
+function seenBefore(): boolean {
+  try {
+    const seen = localStorage.getItem('overprint:seen') === '1';
+    localStorage.setItem('overprint:seen', '1');
+    return seen;
+  } catch {
+    return false;
+  }
+}
 type Finished = { result: MyResult; player: PlayerStats | null; stats: DayStats | null; countedForStreak: boolean };
 
 function Hint({ text }: { text: string }) {
@@ -35,6 +54,9 @@ function ResultCard({
   onClose,
   onShare,
   shareState,
+  onFlair,
+  flairState,
+  now,
 }: {
   result: MyResult;
   player: PlayerStats | null;
@@ -43,8 +65,14 @@ function ResultCard({
   offline: boolean;
   onClose: () => void;
   onShare: (e: MouseEvent<HTMLButtonElement>) => void;
-  shareState: 'idle' | 'busy' | 'done';
+  shareState: Busy;
+  onFlair: () => void;
+  flairState: Busy;
+  now: number;
 }) {
+  const title = player ? titleFor(player) : null;
+  const next = player ? nextTitle(player) : null;
+  const wearing = player?.flair ?? null;
   const atParPct = stats && stats.solvers > 0 ? Math.round((stats.atPar / stats.solvers) * 100) : null;
   return (
     <section className="result" role="dialog" aria-label="Result">
@@ -85,6 +113,25 @@ function ResultCard({
               ? `${stats?.solvers ?? 1} ${stats?.solvers === 1 ? 'printer has' : 'printers have'} pulled today's sheet.`
               : "This is an older print, so it doesn't change your streak."}
       </p>
+      {title && (
+        <div className="title-row">
+          <div>
+            <p className="title-label">Your title</p>
+            <p className="title-name">{title.name}</p>
+            {next && (
+              <p className="title-next">
+                Next: {next.name} at {next.solved} prints, {next.pars} on par
+              </p>
+            )}
+          </div>
+          {!offline && (
+            <button type="button" className="btn btn-quiet btn-small" onClick={onFlair} disabled={flairState !== 'idle'}>
+              {flairState === 'done' || (wearing && wearing.startsWith(title.name)) ? 'Wearing it' : flairState === 'busy' ? 'Setting…' : 'Wear as flair'}
+            </button>
+          )}
+        </div>
+      )}
+      {now > 0 && <p className="result-next">Next print in {untilNextPrint(now)}.</p>}
       <div className="result-actions">
         {!offline && player && (
           <button type="button" className="btn btn-quiet" onClick={onShare} disabled={shareState !== 'idle'}>
@@ -96,7 +143,10 @@ function ResultCard({
         </button>
       </div>
       {!offline && player && shareState === 'idle' && (
-        <p className="result-fine">Comment my result replies as you, under the pinned results comment on this post.</p>
+        <p className="result-fine">
+          Comment my result replies as you, under the pinned results comment. Wear as flair sets your user flair in this
+          community. Both are optional.
+        </p>
       )}
     </section>
   );
@@ -115,10 +165,26 @@ export function App() {
   const [finished, setFinished] = useState<Finished | null>(null);
   const [showCard, setShowCard] = useState(false);
   const [now, setNow] = useState(0);
-  const [shareState, setShareState] = useState<'idle' | 'busy' | 'done'>('idle');
+  const [shareState, setShareState] = useState<Busy>('idle');
+  const [flairState, setFlairState] = useState<Busy>('idle');
+  const [firstVisit] = useState(() => !seenBefore());
+
+  const onFlair = () => {
+    setFlairState('busy');
+    journey.interaction('flair');
+    void wearFlair().then((r) => {
+      setFlairState(r.ok ? 'done' : 'idle');
+      try {
+        showToast(r.ok ? `Flair set: ${r.text}` : r.message);
+      } catch {
+        /* no toast outside Reddit */
+      }
+    });
+  };
 
   const onShare = (e: MouseEvent<HTMLButtonElement>) => {
     setShareState('busy');
+    journey.interaction('comment');
     const native = e.nativeEvent;
     void (async () => {
       try {
@@ -140,6 +206,7 @@ export function App() {
   useEffect(() => {
     void fetchState().then((s) => {
       setServer(s);
+      journey.ready();
       if (s?.result) {
         setFinished({ result: s.result, player: s.player, stats: s.stats, countedForStreak: s.date === s.today });
         setDraft({ presses: s.result.log ?? [], undos: 0, startedAt: null });
@@ -166,20 +233,25 @@ export function App() {
   const doPress = useCallback(() => {
     if (!stamp || !ghost || finished) return;
     const press: Press = { stamp: stamp.id, row: ghost.row, col: ghost.col };
+    const next = [...draft.presses, press];
+    journey.start();
+    const inked = puzzle.target.filter((c) => c !== '.').length || 1;
+    const left = cellsToGo(simulate(puzzle.stamps, next), puzzle.target);
+    journey.progress(1 - left / Math.max(inked, left), next.length);
     setDraft((d) => ({
       presses: [...d.presses, press],
       undos: d.undos,
       startedAt: d.startedAt ?? Date.now(),
     }));
     setGhost(null);
-  }, [stamp, ghost, finished]);
+  }, [stamp, ghost, finished, draft.presses, puzzle]);
 
   // Completion: verify on the server, then show the card once.
   useEffect(() => {
     if (!solvedNow || finished) return;
     const ms = draft.startedAt ? Date.now() - draft.startedAt : 0;
     const body = { date: puzzle.date, presses: draft.presses, ms, undos: draft.undos };
-    void sendComplete(body).then((res) => {
+    void sendComplete(body, journey.id()).then((res) => {
       const local: Finished = res ?? {
         result: {
           presses: draft.presses.length,
@@ -216,10 +288,12 @@ export function App() {
 
   const undo = () => {
     if (finished || draft.presses.length === 0) return;
+    journey.interaction('lift');
     setDraft((d) => ({ ...d, presses: d.presses.slice(0, -1), undos: d.undos + 1 }));
   };
   const restart = () => {
     if (finished || draft.presses.length === 0) return;
+    journey.interaction('new_sheet');
     setDraft((d) => ({ ...d, presses: [], undos: d.undos + d.presses.length }));
     setGhost(null);
   };
@@ -227,9 +301,12 @@ export function App() {
   const uses = (id: string) => draft.presses.filter((p) => p.stamp === id).length;
   const elapsed = draft.startedAt && !finished ? Math.max(0, now - draft.startedAt) : 0;
 
-  let hint = 'Pick a stamp from the tray.';
+  const left = cellsToGo(sheet, puzzle.target);
+  let hint = firstVisit
+    ? 'Copy the proof onto your sheet. Start by picking a stamp from the tray.'
+    : 'Pick a stamp from the tray.';
   if (finished) hint = 'Printed. Come back tomorrow for a new sheet.';
-  else if (stamp && !ghost) hint = 'Tap the sheet where it should go.';
+  else if (stamp && !ghost) hint = draft.presses.length === 0 ? 'Tap the sheet where this stamp should print.' : 'Tap the sheet where it should go.';
   else if (stamp && ghost) hint = 'Tap the same spot again, or hit Press.';
   else if (draft.presses.length === 1) hint = 'Ink is opaque: a later press covers an earlier one.';
   else if (draft.presses.length >= 2 && !stamp) hint = 'Hold Proof to compare with the target.';
@@ -260,7 +337,11 @@ export function App() {
         </figure>
         <div className="bench-side">
           <Hint text={hint} />
-          <p className="clock">{finished ? duration(finished.result.ms) : elapsed ? duration(elapsed) : ''}</p>
+          <p className="clock">
+            {finished
+              ? `Done in ${duration(finished.result.ms)}`
+              : `${left} ${left === 1 ? 'cell' : 'cells'} to go${elapsed ? ` · ${duration(elapsed)}` : ''}`}
+          </p>
         </div>
       </section>
 
@@ -273,11 +354,11 @@ export function App() {
           ghost={stamp && ghost && !finished ? { stamp, ...ghost } : null}
           overlay={comparing ? puzzle.target : null}
           onPointerCell={finished ? undefined : onCell}
-          className={`work-sheet ${solvedNow || finished ? 'is-done' : ''}`}
+          className={`work-sheet ${solvedNow || finished ? 'is-done' : ''} ${stamp && !ghost && !finished && draft.presses.length === 0 ? 'coach' : ''}`}
         />
       </section>
 
-      <section className="tray" aria-label="Stamps">
+      <section className={`tray ${!finished && !stamp && draft.presses.length === 0 ? 'coach' : ''}`} aria-label="Stamps">
         {puzzle.stamps.map((s) => (
           <StampButton
             key={s.id}
@@ -304,7 +385,10 @@ export function App() {
         <button
           type="button"
           className="btn btn-quiet"
-          onPointerDown={() => setComparing(true)}
+          onPointerDown={() => {
+            setComparing(true);
+            journey.interaction('proof');
+          }}
           onPointerUp={() => setComparing(false)}
           onPointerLeave={() => setComparing(false)}
           onKeyDown={(e) => e.key === ' ' && setComparing(true)}
@@ -335,6 +419,9 @@ export function App() {
               onClose={() => setShowCard(false)}
               onShare={onShare}
               shareState={shareState}
+              onFlair={onFlair}
+              flairState={flairState}
+              now={now}
             />
           </div>
         </div>

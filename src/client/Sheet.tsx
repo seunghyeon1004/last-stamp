@@ -117,8 +117,10 @@ export function Sheet({ id, label, stamps, flat, presses, ghost, overlay, onPoin
         if (!s) return null;
         const [dx, dy] = jitter(i);
         return (
-          <g key={i} transform={`translate(${dx} ${dy})`} className={i === presses.length - 1 ? 'fresh-press' : undefined}>
-            <CellRects cells={footprint(shapeOf(s.shape), p.row, p.col)} fill={inkFill(id, s.ink)} />
+          <g key={i} transform={`translate(${dx} ${dy})`}>
+            <g className={i === presses.length - 1 ? 'fresh-press' : undefined}>
+              <CellRects cells={footprint(shapeOf(s.shape), p.row, p.col)} fill={inkFill(id, s.ink)} />
+            </g>
           </g>
         );
       })}

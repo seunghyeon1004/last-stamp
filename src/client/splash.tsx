@@ -46,7 +46,15 @@ export function Splash() {
       <button type="button" className="btn btn-ink btn-big" onClick={open}>
         {done ? 'See my sheet' : 'Pull a sheet'}
       </button>
-      {server?.player && server.player.streak > 0 && <p className="splash-streak">Streak {server.player.streak}</p>}
+      <p className="splash-meta">
+        {[
+          server?.stats.solvers ? `${server.stats.solvers} ${server.stats.solvers === 1 ? 'printer' : 'printers'} today` : null,
+          server?.stats.solvers ? `${Math.round((server.stats.atPar / server.stats.solvers) * 100)}% on par` : null,
+          server?.player && server.player.streak > 0 ? `your streak ${server.player.streak}` : null,
+        ]
+          .filter(Boolean)
+          .join(' · ') || 'Ink is opaque. Work out which press went first.'}
+      </p>
     </main>
   );
 }

@@ -28,7 +28,8 @@
       "asUser": [
         "SUBMIT_COMMENT"
       ]
-    }
+    },
+    "journeys": true
   },
   "menu": {
     "items": [
@@ -42,7 +43,9 @@
     ]
   },
   "triggers": {
-    "onAppInstall": "/internal/triggers/on-app-install"
+    "onAppInstall": "/internal/triggers/on-app-install",
+    "onPostDelete": "/internal/triggers/on-post-delete",
+    "onCommentDelete": "/internal/triggers/on-comment-delete"
   },
   "scheduler": {
     "tasks": {

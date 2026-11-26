@@ -17,3 +17,12 @@ export function duration(ms: number): string {
   if (s < 60) return `${s}s`;
   return `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`;
 }
+
+/** Time until the next UTC midnight, when the next print goes up. */
+export function untilNextPrint(nowMs: number): string {
+  const d = new Date(nowMs);
+  const next = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1);
+  const mins = Math.max(0, Math.ceil((next - nowMs) / 60000));
+  const h = Math.floor(mins / 60);
+  return h > 0 ? `${h}h ${String(mins % 60).padStart(2, '0')}m` : `${mins}m`;
+}
