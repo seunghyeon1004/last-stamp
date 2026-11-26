@@ -93,6 +93,8 @@ type Props = {
   className?: string | undefined;
   /** Stronger cell lines so a flat print reads as a puzzle grid. */
   grid?: boolean | undefined;
+  /** A faint ghost of the target under the presses, so a fresh sheet shows where to aim. */
+  aim?: readonly Cell[] | null | undefined;
 };
 
 function flatRegions(svgId: string, cells: readonly Cell[]) {
@@ -102,7 +104,7 @@ function flatRegions(svgId: string, cells: readonly Cell[]) {
   });
 }
 
-export function Sheet({ id, label, stamps, flat, presses, fresh, ghost, overlay, onPointerCell, className, grid }: Props) {
+export function Sheet({ id, label, stamps, flat, presses, fresh, ghost, overlay, onPointerCell, className, grid, aim }: Props) {
   const ref = useRef<SVGSVGElement>(null);
   const dragging = useRef(false);
 
@@ -182,7 +184,8 @@ export function Sheet({ id, label, stamps, flat, presses, fresh, ghost, overlay,
 
       <rect x={-M} y={-M} width={VB + 2 * M} height={VB + 2 * M} className="sheet-paper" />
       <rect x={-M} y={-M} width={VB + 2 * M} height={VB + 2 * M} filter={`url(#${id}-fibre)`} className="sheet-fibre" />
-      <Guides strong={!!grid} />
+      {aim && <g className="aim">{flatRegions(id, aim)}</g>}
+      <Guides strong={!!grid || !!aim} />
 
       {flat && flatRegions(id, flat)}
 

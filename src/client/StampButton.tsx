@@ -1,38 +1,46 @@
 import { shapeOf, type Stamp } from '../shared/engine';
 import { INK_NAME, INK_TEXTURE_NAME, INK_VAR, InkDefs, inkFill } from './ink';
 
-/** The index label on top of a stamp block: the design, printed once in its ink. */
-export function StampGlyph({ stamp, idPrefix }: { stamp: Stamp; idPrefix: string }) {
-  const shape = shapeOf(stamp.shape);
+export function shapeDims(stamp: Stamp): { rows: number; cols: number } {
   let rows = 0;
   let cols = 0;
-  for (const [r, c] of shape) {
+  for (const [r, c] of shapeOf(stamp.shape)) {
     rows = Math.max(rows, r + 1);
     cols = Math.max(cols, c + 1);
   }
-  const u = 20;
-  const span = Math.max(rows, cols) * u + 6;
-  const ox = (span - cols * u) / 2;
-  const oy = (span - rows * u) / 2;
+  return { rows, cols };
+}
+
+/**
+ * The rubber face: one square per cell, the same proportions as a cell on the sheet, so the
+ * number of cells reads at a glance. Its size comes from the CSS variable --cell.
+ */
+export function StampFace({ stamp, idPrefix }: { stamp: Stamp; idPrefix: string }) {
+  const { rows, cols } = shapeDims(stamp);
+  const u = 100;
+  const gap = 7;
   const id = `${idPrefix}-${stamp.id}`;
-  const set = new Set(shape.map(([r, c]) => `${r},${c}`));
-  // outline of the printed design, so it reads as one rubber face rather than tiles
-  const d: string[] = [];
-  for (const [r, c] of shape) {
-    const x = ox + c * u;
-    const y = oy + r * u;
-    if (!set.has(`${r - 1},${c}`)) d.push(`M${x} ${y}H${x + u}`);
-    if (!set.has(`${r + 1},${c}`)) d.push(`M${x} ${y + u}H${x + u}`);
-    if (!set.has(`${r},${c - 1}`)) d.push(`M${x} ${y}V${y + u}`);
-    if (!set.has(`${r},${c + 1}`)) d.push(`M${x + u} ${y}V${y + u}`);
-  }
   return (
-    <svg viewBox={`-3 -3 ${span + 6} ${span + 6}`} aria-hidden="true" className="stamp-glyph">
+    <svg
+      viewBox={`0 0 ${cols * u} ${rows * u}`}
+      aria-hidden="true"
+      className="stamp-face"
+      style={{ width: `calc(var(--cell) * ${cols})`, height: `calc(var(--cell) * ${rows})` }}
+    >
       <InkDefs id={id} />
-      {shape.map(([r, c], i) => (
-        <rect key={i} x={ox + c * u} y={oy + r * u} width={u + 0.3} height={u + 0.3} fill={inkFill(id, stamp.ink)} />
+      {shapeOf(stamp.shape).map(([r, c], i) => (
+        <rect
+          key={i}
+          x={c * u + gap / 2}
+          y={r * u + gap / 2}
+          width={u - gap}
+          height={u - gap}
+          rx="6"
+          fill={inkFill(id, stamp.ink)}
+          strokeWidth="5"
+          style={{ stroke: INK_VAR[stamp.ink].edge }}
+        />
       ))}
-      <path d={d.join('')} fill="none" strokeWidth="2" strokeLinecap="square" style={{ stroke: INK_VAR[stamp.ink].edge }} />
     </svg>
   );
 }
@@ -41,14 +49,33 @@ export function stampLabel(stamp: Stamp): string {
   return `${INK_NAME[stamp.ink]} stamp, ${INK_TEXTURE_NAME[stamp.ink]}, ${shapeOf(stamp.shape).length} cells`;
 }
 
-/** A rubber stamp seen from above: a wooden block, its paper index label, and the inked rubber lip. */
-export function StampBlock({ stamp, idPrefix }: { stamp: Stamp; idPrefix: string }) {
+/**
+ * A rubber stamp seen from above: the inked rubber face mounted on a wooden block, with the
+ * rubber's edge showing under the front of the block. `slot` sizes the block (in cells) so a
+ * set of blocks can share one size; without it the block hugs its own face.
+ */
+export function StampBlock({
+  stamp,
+  idPrefix,
+  slot,
+}: {
+  stamp: Stamp;
+  idPrefix: string;
+  slot?: { rows: number; cols: number };
+}) {
+  const own = shapeDims(stamp);
+  const s = slot ?? own;
   return (
-    <span className="block" style={{ ['--rubber' as string]: INK_VAR[stamp.ink].edge }}>
+    <span
+      className="block"
+      style={{
+        ['--rubber' as string]: INK_VAR[stamp.ink].edge,
+        ['--slot-cols' as string]: s.cols,
+        ['--slot-rows' as string]: s.rows,
+      }}
+    >
       <span className="block-top">
-        <span className="block-label">
-          <StampGlyph stamp={stamp} idPrefix={idPrefix} />
-        </span>
+        <StampFace stamp={stamp} idPrefix={idPrefix} />
       </span>
       <span className="block-lip" aria-hidden="true" />
     </span>
@@ -60,11 +87,13 @@ export function StampButton({
   stamp,
   selected,
   uses,
+  slot,
   onSelect,
 }: {
   stamp: Stamp;
   selected: boolean;
   uses: number;
+  slot: { rows: number; cols: number };
   onSelect: () => void;
 }) {
   return (
@@ -75,7 +104,7 @@ export function StampButton({
       aria-label={`${stampLabel(stamp)}${uses ? `, pressed ${uses} times` : ''}`}
       onClick={onSelect}
     >
-      <StampBlock stamp={stamp} idPrefix="tray" />
+      <StampBlock stamp={stamp} idPrefix="tray" slot={slot} />
       {uses > 0 && <span className="stamp-uses">{uses}</span>}
     </button>
   );

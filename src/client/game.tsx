@@ -10,7 +10,7 @@ import { nextTitle, titleFor } from '../shared/titles';
 import { clearDraft, fetchState, loadDraft, saveDraft, sendComplete, shareResult, wearFlair } from './api';
 import { journey } from './journey';
 import { Sheet, placeAt } from './Sheet';
-import { StampButton } from './StampButton';
+import { StampButton, shapeDims } from './StampButton';
 import { InkChip } from './ink';
 import { duration, longDate, parLine, untilNextPrint } from './format';
 import { postDate } from './context';
@@ -305,6 +305,8 @@ export function App() {
     setGhost(null);
   };
 
+  // every tray block is the same size, with faces drawn at one shared cell size
+  const slotSize = Math.max(2, ...puzzle.stamps.map((s) => Math.max(shapeDims(s).rows, shapeDims(s).cols)));
   const uses = (id: string) => draft.presses.filter((p) => p.stamp === id).length;
   const elapsed = draft.startedAt && !finished ? Math.max(0, now - draft.startedAt) : 0;
 
@@ -362,17 +364,23 @@ export function App() {
           fresh={fresh}
           ghost={stamp && ghost && !finished ? { stamp, ...ghost } : null}
           overlay={comparing ? puzzle.target : null}
+          aim={finished ? null : puzzle.target}
           onPointerCell={finished ? undefined : onCell}
           className={`work-sheet ${solvedNow || finished ? 'is-done' : ''} ${stamp && !ghost && !finished && draft.presses.length === 0 ? 'coach' : ''}`}
         />
       </section>
 
-      <section className={`tray ${!finished && !stamp && draft.presses.length === 0 ? 'coach' : ''}`} aria-label="Stamps">
+      <section
+        className={`tray ${!finished && !stamp && draft.presses.length === 0 ? 'coach' : ''} n${puzzle.stamps.length}`}
+        aria-label="Stamps"
+        style={{ ['--slot' as string]: slotSize }}
+      >
         {puzzle.stamps.map((s) => (
           <StampButton
             key={s.id}
             stamp={s}
             uses={uses(s.id)}
+            slot={{ rows: slotSize, cols: slotSize }}
             selected={selected === s.id}
             onSelect={() => {
               // Re-tapping the selected stamp keeps it selected, so "tap stamp, tap sheet" never loses a press.

@@ -467,10 +467,20 @@ button {
 
 /* ---------- stamp blocks ---------- */
 
+/* tray: every block the same size; faces share one cell size so cell counts compare at a glance */
+.tray {
+  --tile: 96px;
+  --cell: calc((var(--tile) - 22px) / var(--slot));
+}
+
+.tray.n4 {
+  --tile: 80px;
+}
+
 .stamp {
   position: relative;
-  width: 76px;
-  height: 80px;
+  width: var(--tile);
+  height: calc(var(--tile) + 6px);
   padding: 0;
   border: 0;
   background: none;
@@ -478,21 +488,25 @@ button {
   transition: transform var(--dur-short) var(--ease-out);
 }
 
-.block {
+.stamp .block {
   position: absolute;
-  inset: 0 0 6px;
-  display: flex;
+  inset: 0;
+}
+
+.block {
+  display: inline-flex;
   flex-direction: column;
   border-radius: 7px;
   filter: drop-shadow(0 3px 2px var(--shade)) drop-shadow(0 8px 10px var(--shade));
   transition: filter var(--dur-short) var(--ease-out);
 }
 
-/* the top of the block: end grain, a bevel, and the paper label with the design on it */
+/* the block: end grain and a bevel, with the inked rubber face mounted on it */
 .block-top {
   flex: 1;
   display: grid;
   place-items: center;
+  padding: var(--s-2);
   border-radius: 7px 7px 3px 3px;
   border: 1.5px solid var(--wood-edge);
   background:
@@ -503,24 +517,12 @@ button {
     inset 0 -2px 0 var(--bevel-lo);
 }
 
-.block-label {
-  width: 78%;
-  height: 78%;
-  display: grid;
-  place-items: center;
-  padding: var(--s-1);
-  border-radius: 2px;
-  background: var(--label);
-  box-shadow: 0 0 0 1px var(--wood-edge);
-}
-
-.stamp-glyph {
+.stamp-face {
   display: block;
-  width: 100%;
-  height: 100%;
+  filter: drop-shadow(0 1px 0 var(--bevel-lo));
 }
 
-/* the rubber, inked, showing under the front edge of the block */
+/* the rubber's edge, inked, showing under the front of the block */
 .block-lip {
   height: 6px;
   margin: 0 var(--s-1);
@@ -543,7 +545,7 @@ button {
   position: absolute;
   left: 18%;
   right: 18%;
-  bottom: -10px;
+  bottom: -12px;
   height: 3px;
   border-radius: 2px;
   background: var(--ink);
@@ -564,6 +566,11 @@ button {
   font-family: var(--font-mono);
   font-size: var(--t-xs);
   font-variant-numeric: tabular-nums;
+}
+
+/* the faint target on a working sheet: where to aim */
+.aim {
+  opacity: 0.16;
 }
 
 /* ---------- onboarding: a soft pulse on what to touch next ---------- */
@@ -769,10 +776,16 @@ svg.coach {
   gap: clamp(8px, 3vw, 16px);
 }
 
+.equation {
+  --sheet-size: min(36vw, 30vh, 230px);
+  --cell: calc(var(--sheet-size) * 100 / 528);
+}
+
 .splash-sheet {
   display: block;
-  width: min(44vw, 40vh, 230px);
-  height: min(44vw, 40vh, 230px);
+  flex-shrink: 0;
+  width: var(--sheet-size);
+  height: var(--sheet-size);
   box-shadow:
     0 1px 2px var(--shade),
     0 10px 20px -10px var(--shade-deep);
@@ -795,19 +808,20 @@ svg.coach {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: grid;
-  grid-template-columns: repeat(2, auto);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: center;
   gap: var(--s-2);
-}
-
-.eq-stamps.n2 {
-  grid-template-columns: auto;
+  max-width: 100%;
 }
 
 .eq-stamp {
-  position: relative;
-  width: min(17vw, 15vh, 76px);
-  height: min(18vw, 16vh, 80px);
+  display: flex;
+}
+
+.eq-stamp .block-top {
+  padding: 6px;
 }
 
 .eq-presses {
@@ -833,16 +847,10 @@ svg.coach {
   justify-content: center;
 }
 
+
 @media (min-width: 560px) {
-  .eq-stamps,
-  .eq-stamps.n2 {
-    grid-template-columns: repeat(4, auto);
-  }
-  .eq-stamps.n2 {
-    grid-template-columns: repeat(2, auto);
-  }
-  .eq-stamps.n3 {
-    grid-template-columns: repeat(3, auto);
+  .equation {
+    --sheet-size: min(40vh, 230px);
   }
 }
 
@@ -871,9 +879,8 @@ svg.coach {
   .app .tray {
     gap: var(--s-2);
   }
-  .app .stamp {
-    width: 70px;
-    height: 74px;
+  .app .tray {
+    --tile: 74px;
   }
 }
 
