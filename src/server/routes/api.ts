@@ -2,11 +2,14 @@ import { Hono } from 'hono';
 import { context, reddit } from '@devvit/web/server';
 import { isDateKey, puzzleFor, utcDateKey } from '../../shared/daily';
 import { CELLS, SIZE, sameSheet, simulate, type Press } from '../../shared/engine';
-import type { CompleteRequest, CompleteResponse, ErrorResponse, FlairResponse, ShareResponse, StateResponse } from '../../shared/api';
+import type { CompleteRequest, CompleteResponse, DeskResponse, ErrorResponse, FlairResponse, ShareResponse, StateResponse } from '../../shared/api';
 import { getPlayer, getPostDate, getResult, getStats, linkPost, recordResult, setWornFlair } from '../core/state';
 import { endJourney } from './telemetry';
 import { flairText, titleFor } from '../../shared/titles';
 import { ensureSticky } from '../core/post';
+import { serverPuzzle } from '../core/puzzle';
+import { listEntries, submitEntry, toggleVote, withdrawEntry } from '../core/desk';
+import { deskSunday } from '../../shared/desk';
 import { isT1 } from '../core/ids';
 import { shareText } from '../../shared/share';
 
@@ -27,13 +30,14 @@ api.get('/state', async (c) => {
   if (!postId) return c.json(fail('postId missing'), 400);
   const today = utcDateKey();
   const date = await dateForPost(postId, today);
+  const { override } = await serverPuzzle(date, today);
   const [username, stats, result, player] = await Promise.all([
     reddit.getCurrentUsername(),
     getStats(date),
     userId ? getResult(date, userId) : Promise.resolve(null),
     userId ? getPlayer(userId, today) : Promise.resolve(null),
   ]);
-  return c.json<StateResponse>({ type: 'state', date, today, username: username ?? null, result, player, stats });
+  return c.json<StateResponse>({ type: 'state', date, today, username: username ?? null, result, player, stats, override });
 });
 
 function validPresses(x: unknown): x is Press[] {
@@ -63,7 +67,7 @@ api.post('/complete', async (c) => {
   if (body.date !== date) return c.json(fail('wrong puzzle date'), 400);
   if (!validPresses(body.presses)) return c.json(fail('bad presses'), 400);
 
-  const puzzle = puzzleFor(date);
+  const { puzzle } = await serverPuzzle(date, today);
   let sheet;
   try {
     sheet = simulate(puzzle.stamps, body.presses);
@@ -143,4 +147,42 @@ api.post('/flair', async (c) => {
   });
   await setWornFlair(userId, text);
   return c.json<FlairResponse>({ type: 'flair', text });
+});
+
+// ---------- Open Desk ----------
+
+api.get('/desk', async (c) => {
+  const { userId } = context;
+  const sunday = deskSunday(utcDateKey());
+  const { entries, mine } = await listEntries(sunday, userId);
+  return c.json<DeskResponse>({ type: 'desk', sunday, open: true, loggedIn: !!userId, entries, mine });
+});
+
+api.post('/desk/submit', async (c) => {
+  const { userId } = context;
+  if (!userId) return c.json(fail('Log in to send a card.'), 400);
+  const username = await reddit.getCurrentUsername();
+  if (!username) return c.json(fail('Log in to send a card.'), 400);
+  const body = await c.req.json<{ presses: unknown }>();
+  if (!validPresses(body.presses)) return c.json(fail('Bad presses.'), 400);
+  const r = await submitEntry({ sunday: deskSunday(utcDateKey()), userId, username, presses: body.presses });
+  if (!r.ok) return c.json(fail(r.reason), 400);
+  return c.json({ type: 'submitted', id: r.id, par: r.par });
+});
+
+api.post('/desk/withdraw', async (c) => {
+  const { userId } = context;
+  if (!userId) return c.json(fail('Log in first.'), 400);
+  const ok = await withdrawEntry(deskSunday(utcDateKey()), userId);
+  return ok ? c.json({ type: 'withdrawn' }) : c.json(fail('Nothing to withdraw.'), 400);
+});
+
+api.post('/desk/vote', async (c) => {
+  const { userId } = context;
+  if (!userId) return c.json(fail('Log in to vote.'), 400);
+  const { id } = await c.req.json<{ id: string }>();
+  if (typeof id !== 'string' || id.length > 40) return c.json(fail('Bad card.'), 400);
+  const r = await toggleVote(deskSunday(utcDateKey()), userId, id);
+  if (!r.ok) return c.json(fail(r.reason ?? 'Could not vote.'), 400);
+  return c.json({ type: 'voted', voted: r.voted });
 });

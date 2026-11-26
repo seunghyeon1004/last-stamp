@@ -32,6 +32,7 @@ export type StateResponse = {
   result: MyResult | null; // this player's result for `date`, if any
   player: PlayerStats | null; // null when logged out
   stats: DayStats;
+  override?: CardOverride | null; // a community Sunday card
 };
 
 export type CompleteRequest = {
@@ -54,3 +55,27 @@ export type ErrorResponse = { status: 'error'; message: string };
 export type ShareResponse = { type: 'share'; commentId: string };
 
 export type FlairResponse = { type: 'flair'; text: string };
+
+/** A community card on the Open Desk. `target` is the 25-character sheet string. */
+export type DeskEntry = {
+  id: string;
+  target: string;
+  par: number;
+  author: string;
+  votes: number;
+  mine: boolean;
+  voted: boolean;
+  at: number;
+};
+
+export type DeskResponse = {
+  type: 'desk';
+  sunday: string;
+  open: boolean;
+  loggedIn: boolean;
+  entries: DeskEntry[];
+  mine: string | null;
+};
+
+/** Sunday's card when the community chose it: replaces the generated target and par. */
+export type CardOverride = { target: string; par: number; author: string };

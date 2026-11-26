@@ -2,22 +2,25 @@ import { context, reddit } from '@devvit/web/server';
 import { puzzleFor, utcDateKey } from '../../shared/daily';
 import { getDailyPostId, getPostComment, linkPost, setPostComment } from './state';
 import { isT3 } from './ids';
+import { serverPuzzle } from './puzzle';
 
 const WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-export function postTitle(date: string): string {
+export function postTitle(date: string, par?: number, author?: string): string {
   const p = puzzleFor(date);
   const d = new Date(`${date}T00:00:00Z`);
-  return `Last Stamp #${p.number}: ${WEEKDAY[p.weekday]} ${d.getUTCDate()} ${MONTH[d.getUTCMonth()]}, par ${p.par}`;
+  const base = `Last Stamp #${p.number}: ${WEEKDAY[p.weekday]} ${d.getUTCDate()} ${MONTH[d.getUTCMonth()]}, par ${par ?? p.par}`;
+  return author ? `${base}, a card by u/${author}` : base;
 }
 
 /** Creates the daily post for `date` once; returns the existing post id when already made. */
 export async function ensureDailyPost(date: string = utcDateKey()): Promise<{ postId: string; created: boolean }> {
   const existing = await getDailyPostId(date);
   if (existing) return { postId: existing, created: false };
+  const { override } = await serverPuzzle(date, utcDateKey());
   const post = await reddit.submitCustomPost({
-    title: postTitle(date),
+    title: postTitle(date, override?.par, override?.author),
     entry: 'default',
     postData: { date },
     textFallback: { text: `Last Stamp, the daily stamp puzzle for ${date}. Open this post in the Reddit app or on reddit.com to play.` },

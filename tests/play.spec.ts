@@ -100,3 +100,33 @@ test('reddit mobile expanded size (375x596): the card is the hero', async ({ pag
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: 'docs/screens/after/phone-375x596-game.png' });
 });
+
+test('open desk: compose a card and see its par live', async ({ page }, info) => {
+  const { deskStamps, deskSunday } = await import('../src/shared/desk');
+  const { puzzleFor, utcDateKey } = await import('../src/shared/daily');
+  const sunday = deskSunday(utcDateKey());
+  const p = puzzleFor(sunday);
+  await page.setViewportSize(info.project.name === 'phone' ? { width: 390, height: 760 } : { width: 1100, height: 700 });
+  await page.goto('/desk.html');
+  await expect(page.locator('.wordmark')).toHaveText(/open desk/i);
+  expect(deskStamps(sunday)).toHaveLength(p.stamps.length);
+  for (const press of p.solution) {
+    const box0 = (await page.locator('svg.work-sheet').boundingBox())!;
+    const unit = box0.width / 528;
+    const idx = p.stamps.findIndex((s) => s.id === press.stamp);
+    const btn = page.locator('.tray .stamp').nth(idx);
+    if ((await btn.getAttribute('aria-pressed')) !== 'true') await btn.click();
+    let tap: [number, number] = [0, 0];
+    for (let r = 0; r < SIZE; r++)
+      for (let c = 0; c < SIZE; c++) {
+        const q = placeAt(p.stamps[idx]!, r, c);
+        if (q.row === press.row && q.col === press.col) tap = [r, c];
+      }
+    await page.mouse.click(box0.x + (14 + tap[1] * 100 + 50) * unit, box0.y + (14 + tap[0] * 100 + 50) * unit);
+    await page.getByRole('button', { name: 'Press', exact: true }).click();
+  }
+  await expect(page.locator('.hint')).toContainText(`Par ${p.par}`);
+  const overflow = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.screenshot({ path: `${SHOTS}/desk-make-${info.project.name}.png` });
+});

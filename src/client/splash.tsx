@@ -4,6 +4,7 @@ import { StrictMode, useEffect, useMemo, useState, type MouseEvent } from 'react
 import { createRoot } from 'react-dom/client';
 import { requestExpandedMode } from '@devvit/web/client';
 import { isDateKey, puzzleFor, utcDateKey } from '../shared/daily';
+import { sheetFromString } from '../shared/engine';
 import type { StateResponse } from '../shared/api';
 import { fetchState } from './api';
 import { Sheet } from './Sheet';
@@ -20,7 +21,11 @@ export function Splash() {
     void fetchState().then(setServer);
   }, []);
   const date = server?.date ?? postDate() ?? utcDateKey();
-  const puzzle = useMemo(() => puzzleFor(isDateKey(date) ? date : utcDateKey()), [date]);
+  const override = server?.override ?? null;
+  const puzzle = useMemo(() => {
+    const base = puzzleFor(isDateKey(date) ? date : utcDateKey());
+    return override ? { ...base, target: sheetFromString(override.target), par: override.par } : base;
+  }, [date, override]);
   const done = server?.result ?? null;
   const n = puzzle.stamps.length;
 
@@ -78,8 +83,22 @@ export function Splash() {
         </div>
       </div>
 
+      {override && <p className="splash-credit">Chosen at the Open desk: a card by u/{override.author}</p>}
       <button type="button" className="btn btn-primary btn-big" onClick={open}>
         {done ? 'See my card' : 'Start stamping'}
+      </button>
+      <button
+        type="button"
+        className="link-btn"
+        onClick={(e) => {
+          try {
+            requestExpandedMode(e.nativeEvent, 'desk');
+          } catch {
+            window.location.href = 'desk.html';
+          }
+        }}
+      >
+        Make next Sunday's card
       </button>
       <p className="splash-meta">
         {meta.length ? meta.map((m) => <span key={m}>{m}</span>) : <span>The last stamp wins: a later press covers what is under it.</span>}

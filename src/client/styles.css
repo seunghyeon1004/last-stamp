@@ -878,6 +878,111 @@ svg.coach {
   }
 }
 
+/* ---------- open desk ---------- */
+
+.desk-tabs {
+  display: flex;
+  gap: var(--s-2);
+}
+
+.desk-bench {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.desk-vote,
+.desk-mine {
+  grid-row: 2 / -1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.desk-mine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s-4);
+}
+
+.desk-mine-sheet {
+  width: min(70vw, 40vh, 280px);
+  height: min(70vw, 40vh, 280px);
+}
+
+.desk-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: var(--s-3);
+}
+
+.desk-entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+  padding: var(--s-2);
+  border: 1.5px solid var(--rule-desk);
+  border-radius: var(--radius);
+}
+
+.desk-entry-sheet {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.desk-entry-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+}
+
+.desk-entry-author {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ink);
+}
+
+.desk-entry-votes,
+.desk-fine {
+  margin: 0;
+  font-size: var(--t-xs);
+  color: var(--ink-soft);
+}
+
+.desk-fine {
+  margin-top: var(--s-4);
+}
+
+.splash-credit {
+  margin: 0;
+  font-size: var(--t-sm);
+  color: var(--ink-soft);
+}
+
+.link-btn {
+  background: none;
+  border: 0;
+  padding: var(--s-2);
+  min-height: var(--control);
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  font-size: var(--t-sm);
+}
+
+.link-btn:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+
 /* Short portrait viewports (Reddit's mobile expanded view, about 375x596): the card is the hero */
 @media (max-height: 700px) and (max-aspect-ratio: 11/10) {
   .app {

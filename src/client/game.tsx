@@ -1,10 +1,10 @@
 import './styles.css';
 
 import { StrictMode, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
-import { canRunAsUser, showToast } from '@devvit/web/client';
+import { canRunAsUser, requestExpandedMode, showToast } from '@devvit/web/client';
 import { createRoot } from 'react-dom/client';
 import { puzzleFor, utcDateKey, isDateKey } from '../shared/daily';
-import { INKS, sameSheet, simulate, type Cell, type Ink, type Press, type Stamp } from '../shared/engine';
+import { INKS, sameSheet, sheetFromString, simulate, type Cell, type Ink, type Press, type Stamp } from '../shared/engine';
 import type { DayStats, MyResult, PlayerStats, StateResponse } from '../shared/api';
 import { nextTitle, titleFor } from '../shared/titles';
 import { clearDraft, fetchState, loadDraft, saveDraft, sendComplete, shareResult, wearFlair } from './api';
@@ -57,6 +57,7 @@ function ResultCard({
   onFlair,
   flairState,
   now,
+  openDesk,
 }: {
   result: MyResult;
   player: PlayerStats | null;
@@ -69,6 +70,7 @@ function ResultCard({
   onFlair: () => void;
   flairState: Busy;
   now: number;
+  openDesk: (e: MouseEvent<HTMLButtonElement>) => void;
 }) {
   const title = player ? titleFor(player) : null;
   const next = player ? nextTitle(player) : null;
@@ -142,6 +144,11 @@ function ResultCard({
           See my card
         </button>
       </div>
+      {!offline && (
+        <button type="button" className="link-btn" onClick={openDesk}>
+          Make next Sunday's card at the Open desk
+        </button>
+      )}
       {!offline && player && shareState === 'idle' && (
         <p className="result-fine">
           Comment my result replies as you, under the pinned results comment. Wear as flair sets your user flair in this
@@ -155,7 +162,11 @@ function ResultCard({
 export function App() {
   const [server, setServer] = useState<StateResponse | null>(null);
   const date = server?.date ?? postDate() ?? utcDateKey();
-  const puzzle = useMemo(() => puzzleFor(isDateKey(date) ? date : utcDateKey()), [date]);
+  const override = server?.override ?? null;
+  const puzzle = useMemo(() => {
+    const base = puzzleFor(isDateKey(date) ? date : utcDateKey());
+    return override ? { ...base, target: sheetFromString(override.target), par: override.par } : base;
+  }, [date, override]);
 
   const [draft, setDraft] = useState<Draft>({ presses: [], undos: 0, startedAt: null });
   const [selected, setSelected] = useState<string | null>(null);
@@ -332,6 +343,7 @@ export function App() {
           <p className="issue">
             <span>No. {puzzle.number}</span>
             <span>{longDate(puzzle.date)}</span>
+            {override && <span>card by u/{override.author}</span>}
           </p>
         </div>
         <div className="counter" aria-label={`${draft.presses.length} presses, par ${puzzle.par}`}>
@@ -439,6 +451,13 @@ export function App() {
               onFlair={onFlair}
               flairState={flairState}
               now={now}
+              openDesk={(e) => {
+                try {
+                  requestExpandedMode(e.nativeEvent, 'desk');
+                } catch {
+                  window.location.href = 'desk.html';
+                }
+              }}
             />
           </div>
         </div>
