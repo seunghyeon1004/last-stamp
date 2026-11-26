@@ -89,3 +89,14 @@ test('desktop modal size: sheet uses the height, nothing scrolls', async ({ page
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: '../docs/screens/game-start-desktop-modal.png' });
 });
+
+test('reddit mobile expanded size (375x596): the card is the hero', async ({ page }, info) => {
+  test.skip(info.project.name !== 'phone');
+  await page.setViewportSize({ width: 375, height: 596 });
+  await page.goto('/game.html');
+  const box = (await page.locator('svg.work-sheet').boundingBox())!;
+  expect(box.width).toBeGreaterThanOrEqual(300);
+  const overflow = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.screenshot({ path: 'docs/screens/after/phone-375x596-game.png' });
+});
