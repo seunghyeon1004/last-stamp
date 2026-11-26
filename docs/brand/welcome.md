@@ -2,7 +2,7 @@
 
 ---
 
-Every day at 00:00 UTC a new card goes up here. It's a 5x5 picture, plus the rubber stamps that can make it.
+Every day just after 00:00 UTC a new card goes up here. It's a 5x5 picture, plus the rubber stamps that can make it.
 
 **Your job:** copy the card in as few presses as you can.
 
