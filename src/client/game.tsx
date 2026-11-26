@@ -60,7 +60,7 @@ function ResultCard({
       </div>
       <dl className="result-stats">
         <div>
-          <dt>Time</dt>
+          <dt>Time at press</dt>
           <dd>{duration(result.ms)}</dd>
         </div>
         <div>
@@ -227,12 +227,13 @@ export function App() {
   const uses = (id: string) => draft.presses.filter((p) => p.stamp === id).length;
   const elapsed = draft.startedAt && !finished ? Math.max(0, now - draft.startedAt) : 0;
 
-  let hint = 'Pick a stamp below.';
+  let hint = 'Pick a stamp from the tray.';
   if (finished) hint = 'Printed. Come back tomorrow for a new sheet.';
   else if (stamp && !ghost) hint = 'Tap the sheet where it should go.';
   else if (stamp && ghost) hint = 'Tap the same spot again, or hit Press.';
   else if (draft.presses.length === 1) hint = 'Ink is opaque: a later press covers an earlier one.';
   else if (draft.presses.length >= 2 && !stamp) hint = 'Hold Proof to compare with the target.';
+  else if (draft.presses.length === 0 && draft.startedAt) hint = 'Fresh sheet. The clock keeps running: it counts all your time at the press.';
 
   const presses = draft.presses;
   const offline = !server;
@@ -284,8 +285,9 @@ export function App() {
             uses={uses(s.id)}
             selected={selected === s.id}
             onSelect={() => {
-              if (finished) return;
-              setSelected((cur) => (cur === s.id ? null : s.id));
+              // Re-tapping the selected stamp keeps it selected, so "tap stamp, tap sheet" never loses a press.
+              if (finished || selected === s.id) return;
+              setSelected(s.id);
               setGhost(null);
             }}
           />

@@ -60,3 +60,22 @@ test('splash shows the date and par', async ({ page }, info) => {
   await expect(page.locator('.splash-line')).toContainText(`Par ${puzzle.par}`);
   await page.screenshot({ path: `${SHOTS}/splash-${info.project.name}.png` });
 });
+
+test('re-tapping the selected stamp keeps it selected', async ({ page }) => {
+  await page.goto('/game.html');
+  const first = page.locator('.tray .stamp').first();
+  await first.click();
+  await first.click();
+  await expect(first).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('desktop modal size: sheet uses the height, nothing scrolls', async ({ page }, info) => {
+  test.skip(info.project.name !== 'desktop');
+  await page.setViewportSize({ width: 724, height: 596 });
+  await page.goto('/game.html');
+  const box = (await page.locator('svg.work-sheet').boundingBox())!;
+  expect(box.height).toBeGreaterThan(380);
+  const overflow = await page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight);
+  expect(overflow).toBeLessThanOrEqual(0);
+  await page.screenshot({ path: '../docs/screens/game-start-desktop-modal.png' });
+});

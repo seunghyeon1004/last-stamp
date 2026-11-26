@@ -128,7 +128,53 @@ button {
   padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+  grid-template-areas: 'head' 'bench' 'bed' 'tray' 'ctl';
   gap: 10px;
+}
+
+.masthead {
+  grid-area: head;
+}
+.bench {
+  grid-area: bench;
+}
+.press-bed {
+  grid-area: bed;
+}
+.tray {
+  grid-area: tray;
+}
+.controls {
+  grid-area: ctl;
+}
+
+/* Wide, short viewports (desktop modal): the sheet takes the full height on the left. */
+@media (min-aspect-ratio: 11/10) and (min-width: 600px) {
+  .app {
+    max-width: 1040px;
+    padding: 16px 24px;
+    column-gap: 20px;
+    grid-template-columns: minmax(0, 1fr) clamp(236px, 28vw, 320px);
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'bed head'
+      'bed bench'
+      'bed .'
+      'bed tray'
+      'bed ctl';
+  }
+  .app .tray {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .app .stamp {
+    width: 68px;
+    height: 68px;
+  }
+  .app .controls {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .masthead {
