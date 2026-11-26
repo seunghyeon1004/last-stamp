@@ -39,10 +39,8 @@ function EntryCard({ entry, stamps, onVote, busy }: { entry: DeskEntry; stamps: 
   return (
     <li className="desk-entry">
       <Sheet id={`e-${entry.id}`} label={`Card by u/${entry.author}, par ${entry.par}`} stamps={stamps} flat={sheetFromString(entry.target)} grid className="desk-entry-sheet" />
-      <div className="desk-entry-meta">
-        <span className="desk-entry-author">u/{entry.author}</span>
-        <span>par {entry.par}</span>
-      </div>
+      <p className="desk-entry-author">u/{entry.author}</p>
+      <p className="desk-entry-meta">par {entry.par}</p>
       {entry.mine ? (
         <p className="desk-entry-votes">Your card: {entry.votes} {entry.votes === 1 ? 'vote' : 'votes'}</p>
       ) : (
@@ -157,7 +155,9 @@ export function Desk() {
       {tab === 'make' ? (
         mineEntry ? (
           <section className="desk-mine">
-            <p className="hint">Your card is on the desk with {mineEntry.votes} {mineEntry.votes === 1 ? 'vote' : 'votes'}. The most voted card becomes Sunday's puzzle, credited to its maker.</p>
+            <p className="desk-note">
+              Your card is on the desk with {mineEntry.votes} {mineEntry.votes === 1 ? 'vote' : 'votes'}. The most voted card becomes Sunday's puzzle, credited to you.
+            </p>
             <Sheet id="mine" label="Your card" stamps={stamps} flat={sheetFromString(mineEntry.target)} grid className="desk-mine-sheet" />
             <button type="button" className="btn btn-quiet" onClick={withdraw} disabled={busy}>
               Withdraw my card

@@ -933,18 +933,27 @@ svg.coach {
 }
 
 .desk-entry-meta {
-  display: flex;
-  justify-content: space-between;
-  gap: var(--s-2);
+  margin: 0;
   font-size: var(--t-xs);
   color: var(--ink-soft);
 }
 
+/* the maker's full name on its own line, wrapping if it must, never cut */
 .desk-entry-author {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 0;
+  font-size: var(--t-sm);
+  line-height: 1.2;
   color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.desk-note {
+  margin: 0;
+  max-width: 34ch;
+  font-size: var(--t-md);
+  line-height: 1.35;
+  text-align: center;
+  overflow-wrap: break-word;
 }
 
 .desk-entry-votes,
