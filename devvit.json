@@ -1,11 +1,14 @@
 {
   "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
-  "name": "overprint",
+  "name": "overprint-press",
   "post": {
     "dir": "dist/client",
     "entrypoints": {
       "default": {
-        "styles": { "backgroundColor": "#F2EDE4FF", "backgroundColorDark": "#F2EDE4FF" },
+        "styles": {
+          "backgroundColor": "#F2EDE4FF",
+          "backgroundColorDark": "#F2EDE4FF"
+        },
         "entry": "splash.html",
         "height": "tall"
       },
@@ -22,7 +25,9 @@
     "redis": true,
     "reddit": {
       "enable": true,
-      "asUser": ["SUBMIT_COMMENT"]
+      "asUser": [
+        "SUBMIT_COMMENT"
+      ]
     }
   },
   "menu": {
@@ -50,5 +55,8 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build"
+  },
+  "dev": {
+    "subreddit": "overprint_press_dev"
   }
 }

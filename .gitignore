@@ -5,3 +5,4 @@ dist
 .tools
 test-results
 playwright-report
+tools/*.tsbuildinfo
