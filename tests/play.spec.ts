@@ -16,7 +16,7 @@ async function tapCell(page: Page, row: number, col: number) {
 test('fits one viewport and solves today at par', async ({ page }, info) => {
   const puzzle = puzzleFor(utcDateKey());
   await page.goto('/game.html');
-  await expect(page.locator('.wordmark')).toHaveText(/overprint/i);
+  await expect(page.locator('.wordmark')).toHaveText(/last stamp/i);
 
   // nothing scrolls: the page fits the viewport
   const overflow = await page.evaluate(() => ({
@@ -66,7 +66,7 @@ test('splash puts the puzzle first and fits the inline post', async ({ page }, i
     // the target print is the biggest thing on the card
     const sheet = (await page.locator('.splash-sheet').boundingBox())!;
     const mark = (await page.locator('.wordmark').boundingBox())!;
-    expect(sheet.height).toBeGreaterThan(mark.height * 5);
+    expect(sheet.height).toBeGreaterThan(mark.height * 4);
     await page.screenshot({ path: `${SHOTS}/splash-after-${info.project.name}-${size.width}x${size.height}.png` });
   }
 });

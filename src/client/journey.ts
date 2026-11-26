@@ -23,13 +23,13 @@ export const journey = {
     started = true;
     safe(() => telemetry.startJourney());
   },
-  /** After each committed press: share of inked cells that already match the proof. */
+  /** After each committed press: share of inked cells that already match the target. */
   progress(fraction: number, presses: number): void {
     safe(() =>
       telemetry.progress({ progress: Math.max(0, Math.min(1, fraction)), action: 'press', actionDetails: `presses=${presses}` })
     );
   },
-  interaction(action: 'lift' | 'new_sheet' | 'proof' | 'comment' | 'flair'): void {
+  interaction(action: 'lift' | 'new_sheet' | 'target' | 'comment' | 'flair'): void {
     safe(() => telemetry.interaction({ action }));
   },
   id(): string | undefined {

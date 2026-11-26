@@ -7,8 +7,8 @@ describe('titles', () => {
     expect(titleFor({ solved: 1, pars: 0 })?.name).toBe('Apprentice');
     expect(titleFor({ solved: 3, pars: 2 })?.name).toBe('Apprentice');
     expect(titleFor({ solved: 3, pars: 3 })?.name).toBe('Inker');
-    expect(titleFor({ solved: 40, pars: 25 })?.name).toBe('Master Printer');
-    expect(nextTitle({ solved: 3, pars: 3 })?.name).toBe('Compositor');
+    expect(titleFor({ solved: 40, pars: 25 })?.name).toBe('Master Stamper');
+    expect(nextTitle({ solved: 3, pars: 3 })?.name).toBe('Stampsmith');
     expect(nextTitle({ solved: 99, pars: 99 })).toBeNull();
   });
   it('builds flair text without commas', () => {

@@ -9,5 +9,5 @@ export function shareText(number: number, r: MyResult): string {
     .map((ink) => SQUARE[ink] ?? '')
     .join('');
   const verdict = r.presses <= r.par ? 'on par' : `${r.presses - r.par} over par`;
-  return `Overprint No. ${number}: ${r.presses} presses, ${verdict}\n\n${strip}`;
+  return `Last Stamp #${number}: ${r.presses} presses, ${verdict}\n\n${strip}`;
 }

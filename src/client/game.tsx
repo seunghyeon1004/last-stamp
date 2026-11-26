@@ -12,7 +12,7 @@ import { journey } from './journey';
 import { Sheet, placeAt } from './Sheet';
 import { StampButton, shapeDims } from './StampButton';
 import { InkChip } from './ink';
-import { duration, longDate, parLine, untilNextPrint } from './format';
+import { duration, longDate, parLine, untilNextCard } from './format';
 import { postDate } from './context';
 
 const isInk = (x: string): x is Ink => (INKS as readonly string[]).includes(x);
@@ -28,8 +28,8 @@ function cellsToGo(sheet: readonly Cell[], target: readonly Cell[]): number {
 
 function seenBefore(): boolean {
   try {
-    const seen = localStorage.getItem('overprint:seen') === '1';
-    localStorage.setItem('overprint:seen', '1');
+    const seen = localStorage.getItem('laststamp:seen') === '1';
+    localStorage.setItem('laststamp:seen', '1');
     return seen;
   } catch {
     return false;
@@ -76,7 +76,7 @@ function ResultCard({
   const atParPct = stats && stats.solvers > 0 ? Math.round((stats.atPar / stats.solvers) * 100) : null;
   return (
     <section className="result" role="dialog" aria-label="Result">
-      <p className="result-kicker">Pulled from the press</p>
+      <p className="result-kicker">Card finished</p>
       <h2 className="result-title">
         {result.presses} {result.presses === 1 ? 'press' : 'presses'}
         <span className={`result-par ${result.presses <= result.par ? 'is-par' : ''}`}>{parLine(result.presses, result.par)}</span>
@@ -88,7 +88,7 @@ function ResultCard({
       </div>
       <dl className="result-stats">
         <div>
-          <dt>Time at press</dt>
+          <dt>Time at desk</dt>
           <dd>{duration(result.ms)}</dd>
         </div>
         <div>
@@ -110,8 +110,8 @@ function ResultCard({
           : !player
             ? 'Log in to keep a streak.'
             : countedForStreak
-              ? `${stats?.solvers ?? 1} ${stats?.solvers === 1 ? 'printer has' : 'printers have'} pulled today's sheet.`
-              : "This is an older print, so it doesn't change your streak."}
+              ? `${stats?.solvers ?? 1} ${stats?.solvers === 1 ? 'player has' : 'players have'} finished today's card.`
+              : "This is an older card, so it doesn't change your streak."}
       </p>
       {title && (
         <div className="title-row">
@@ -120,7 +120,7 @@ function ResultCard({
             <p className="title-name">{title.name}</p>
             {next && (
               <p className="title-next">
-                Next: {next.name} at {next.solved} prints, {next.pars} on par
+                Next: {next.name} at {next.solved} cards, {next.pars} on par
               </p>
             )}
           </div>
@@ -131,7 +131,7 @@ function ResultCard({
           )}
         </div>
       )}
-      {now > 0 && <p className="result-next">Next print in {untilNextPrint(now)}.</p>}
+      {now > 0 && <p className="result-next">Next card in {untilNextCard(now)}.</p>}
       <div className="result-actions">
         {!offline && player && (
           <button type="button" className="btn btn-quiet" onClick={onShare} disabled={shareState !== 'idle'}>
@@ -139,7 +139,7 @@ function ResultCard({
           </button>
         )}
         <button type="button" className="btn btn-primary" onClick={onClose}>
-          See my sheet
+          See my card
         </button>
       </div>
       {!offline && player && shareState === 'idle' && (
@@ -312,14 +312,14 @@ export function App() {
 
   const left = cellsToGo(sheet, puzzle.target);
   let hint = firstVisit
-    ? 'Copy the proof onto your sheet. Start by picking a stamp from the tray.'
+    ? 'Copy the target onto your card. Start by picking a stamp from the tray.'
     : 'Pick a stamp from the tray.';
-  if (finished) hint = 'Printed. Come back tomorrow for a new sheet.';
-  else if (stamp && !ghost) hint = draft.presses.length === 0 ? 'Tap the sheet where this stamp should print.' : 'Tap the sheet where it should go.';
+  if (finished) hint = 'Done. A new card comes tomorrow.';
+  else if (stamp && !ghost) hint = draft.presses.length === 0 ? 'Tap your card where this stamp should land.' : 'Tap your card where it should go.';
   else if (stamp && ghost) hint = 'Tap the same spot again, or hit Press.';
-  else if (draft.presses.length === 1) hint = 'Ink is opaque: a later press covers an earlier one.';
-  else if (draft.presses.length >= 2 && !stamp) hint = 'Hold Proof to compare with the target.';
-  else if (draft.presses.length === 0 && draft.startedAt) hint = 'Fresh sheet. The clock keeps running: it counts all your time at the press.';
+  else if (draft.presses.length === 1) hint = 'The last stamp wins: a later press covers what is under it.';
+  else if (draft.presses.length >= 2 && !stamp) hint = 'Hold Target to compare.';
+  else if (draft.presses.length === 0 && draft.startedAt) hint = 'Fresh card. The clock keeps running: it counts all your time at the desk.';
 
   const presses = draft.presses;
   const offline = !server;
@@ -328,7 +328,7 @@ export function App() {
     <main className="app">
       <header className="masthead">
         <div>
-          <h1 className="wordmark">Overprint</h1>
+          <h1 className="wordmark">Last Stamp</h1>
           <p className="issue">
             <span>No. {puzzle.number}</span>
             <span>{longDate(puzzle.date)}</span>
@@ -341,9 +341,9 @@ export function App() {
       </header>
 
       <section className="bench">
-        <figure className="proof">
-          <Sheet id="proof" label="Target print" stamps={puzzle.stamps} flat={puzzle.target} className="proof-sheet" />
-          <figcaption>Proof</figcaption>
+        <figure className="target">
+          <Sheet id="target" label="Target card" stamps={puzzle.stamps} flat={puzzle.target} className="target-sheet" />
+          <figcaption>Target</figcaption>
         </figure>
         <div className="bench-side">
           <Hint text={hint} />
@@ -358,7 +358,7 @@ export function App() {
       <section className="press-bed">
         <Sheet
           id="work"
-          label={finished ? 'Your finished sheet' : 'Your sheet'}
+          label={finished ? 'Your finished card' : 'Your card'}
           stamps={puzzle.stamps}
           presses={presses}
           fresh={fresh}
@@ -397,21 +397,21 @@ export function App() {
           Lift
         </button>
         <button type="button" className="btn btn-quiet" onClick={restart} disabled={!!finished || draft.presses.length === 0}>
-          New sheet
+          New card
         </button>
         <button
           type="button"
           className="btn btn-quiet"
           onPointerDown={() => {
             setComparing(true);
-            journey.interaction('proof');
+            journey.interaction('target');
           }}
           onPointerUp={() => setComparing(false)}
           onPointerLeave={() => setComparing(false)}
           onKeyDown={(e) => e.key === ' ' && setComparing(true)}
           onKeyUp={() => setComparing(false)}
         >
-          Proof
+          Target
         </button>
         {finished ? (
           <button type="button" className="btn btn-primary" onClick={() => setShowCard(true)}>

@@ -13,7 +13,7 @@ import { postDate } from './context';
 
 const COUNT = ['zero', 'one', 'two', 'three', 'four'];
 
-/** Inline post: the puzzle itself is the headline. Target print = these stamps, in par presses. */
+/** Inline post: the puzzle itself is the headline. Target card = these stamps, in par presses. */
 export function Splash() {
   const [server, setServer] = useState<StateResponse | null>(null);
   useEffect(() => {
@@ -33,7 +33,7 @@ export function Splash() {
   };
 
   const meta = [
-    server?.stats.solvers ? `${server.stats.solvers} ${server.stats.solvers === 1 ? 'printer' : 'printers'} today` : null,
+    server?.stats.solvers ? `${server.stats.solvers} ${server.stats.solvers === 1 ? 'player' : 'players'} today` : null,
     server?.stats.solvers ? `${Math.round((server.stats.atPar / server.stats.solvers) * 100)}% on par` : null,
     server?.player && server.player.streak > 0 ? `your streak ${server.player.streak}` : null,
   ].filter((x): x is string => Boolean(x));
@@ -41,7 +41,7 @@ export function Splash() {
   return (
     <main className="splash">
       <header className="splash-mast">
-        <span className="wordmark wordmark-sm">Overprint</span>
+        <span className="wordmark wordmark-sm">Last Stamp</span>
         <span className="issue">
           <span>No. {puzzle.number}</span>
           <span>{longDate(puzzle.date)}</span>
@@ -50,17 +50,17 @@ export function Splash() {
 
       <h1 className="splash-challenge">
         {done ? (
-          <>You printed it in {done.presses}, {parLine(done.presses, done.par)}.</>
+          <>You stamped it in {done.presses}, {parLine(done.presses, done.par)}.</>
         ) : (
           <>
-            Rebuild this print with {COUNT[n] ?? n} stamps.
+            Stamp this card with {COUNT[n] ?? n} stamps.
             <span className="splash-par">Par {puzzle.par}</span>
           </>
         )}
       </h1>
 
-      <div className="equation" aria-label={`Target print, made from ${n} stamps in ${puzzle.par} presses`}>
-        <Sheet id="splash" label="Today's print" stamps={puzzle.stamps} flat={puzzle.target} grid className="splash-sheet" />
+      <div className="equation" aria-label={`Target card, made from ${n} stamps in ${puzzle.par} presses`}>
+        <Sheet id="splash" label="Today's card" stamps={puzzle.stamps} flat={puzzle.target} grid className="splash-sheet" />
         <span className="eq-op" aria-hidden="true">
           =
         </span>
@@ -79,10 +79,10 @@ export function Splash() {
       </div>
 
       <button type="button" className="btn btn-primary btn-big" onClick={open}>
-        {done ? 'See my sheet' : 'Start printing'}
+        {done ? 'See my card' : 'Start stamping'}
       </button>
       <p className="splash-meta">
-        {meta.length ? meta.map((m) => <span key={m}>{m}</span>) : <span>Ink is opaque: later presses cover earlier ones.</span>}
+        {meta.length ? meta.map((m) => <span key={m}>{m}</span>) : <span>The last stamp wins: a later press covers what is under it.</span>}
       </p>
     </main>
   );

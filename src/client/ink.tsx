@@ -1,6 +1,6 @@
 import type { Ink } from '../shared/engine';
 
-// Four riso drums. Every ink also carries its own screen (solid, stripes, dots, hatch) so the
+// Four stamp-pad inks. Every ink also carries its own screen (solid, stripes, dots, hatch) so the
 // layers stay readable without colour. Colours come from CSS tokens (styles.css :root).
 export const INK_VAR: Record<Ink, { fill: string; mark: string; edge: string }> = {
   R: { fill: 'var(--ink-red)', mark: 'var(--ink-red-mark)', edge: 'var(--ink-red-edge)' },
@@ -62,7 +62,7 @@ export function inkFill(svgId: string, ink: Ink): string {
   return `url(#${svgId}-${ink})`;
 }
 
-/** A small printed swatch, for the press strip on the result card. */
+/** A small inked swatch, for the press strip on the result card. */
 export function InkChip({ ink, size = 20 }: { ink: Ink; size?: number }) {
   const id = `chip-${ink}`;
   return (

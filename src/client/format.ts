@@ -18,8 +18,8 @@ export function duration(ms: number): string {
   return `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, '0')}s`;
 }
 
-/** Time until the next UTC midnight, when the next print goes up. */
-export function untilNextPrint(nowMs: number): string {
+/** Time until the next UTC midnight, when the next card goes up. */
+export function untilNextCard(nowMs: number): string {
   const d = new Date(nowMs);
   const next = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1);
   const mins = Math.max(0, Math.ceil((next - nowMs) / 60000));

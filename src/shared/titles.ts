@@ -1,12 +1,12 @@
-// Earned print-shop titles, worn as user flair only when the player asks for it.
+// Earned stamping titles, worn as user flair only when the player asks for it.
 export type Title = { name: string; pars: number; solved: number; bg: string; text: 'dark' | 'light' };
 
 // Ordered from lowest to highest. A title needs both counts.
 export const TITLES: readonly Title[] = [
-  { name: 'Apprentice', solved: 1, pars: 0, bg: '#F2EDE4', text: 'dark' },
-  { name: 'Inker', solved: 3, pars: 3, bg: '#F7D417', text: 'dark' },
-  { name: 'Compositor', solved: 10, pars: 7, bg: '#1F6FB8', text: 'light' },
-  { name: 'Master Printer', solved: 30, pars: 20, bg: '#E8414A', text: 'light' },
+  { name: 'Apprentice', solved: 1, pars: 0, bg: '#D8C29D', text: 'dark' },
+  { name: 'Inker', solved: 3, pars: 3, bg: '#E0A526', text: 'dark' },
+  { name: 'Stampsmith', solved: 10, pars: 7, bg: '#2D5DA8', text: 'light' },
+  { name: 'Master Stamper', solved: 30, pars: 20, bg: '#C8452A', text: 'light' },
 ];
 
 export function titleFor(stats: { solved: number; pars: number }): Title | null {

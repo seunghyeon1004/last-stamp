@@ -30,7 +30,7 @@ export function outlinePath(cells: readonly number[]): string {
 }
 
 /** One inked region: an opaque body and a multiplied rim, so where it crosses another ink a
- *  thin overprint fringe shows (the riso third colour), while the body stays opaque. */
+ *  thin fringe shows where the inks overlap, while the body stays opaque. */
 function InkRegion({ svgId, ink, cells }: { svgId: string; ink: Ink; cells: readonly number[] }) {
   return (
     <>
@@ -81,7 +81,7 @@ type Props = {
   id: string;
   label: string;
   stamps: readonly Stamp[];
-  /** Flat rendering of a finished sheet (used for the proof). */
+  /** Flat rendering of a finished sheet (used for the target). */
   flat?: readonly Cell[] | undefined;
   /** Rendering from presses, oldest first (used for the working sheet). */
   presses?: readonly Press[] | undefined;
@@ -91,7 +91,7 @@ type Props = {
   overlay?: readonly Cell[] | null | undefined;
   onPointerCell?: ((row: number, col: number, phase: 'down' | 'move' | 'up') => void) | undefined;
   className?: string | undefined;
-  /** Stronger cell lines so a flat print reads as a puzzle grid. */
+  /** Stronger cell lines so a flat card reads as a puzzle grid. */
   grid?: boolean | undefined;
   /** A faint ghost of the target under the presses, so a fresh sheet shows where to aim. */
   aim?: readonly Cell[] | null | undefined;
@@ -203,7 +203,7 @@ export function Sheet({ id, label, stamps, flat, presses, fresh, ghost, overlay,
       })}
 
       {overlay && (
-        <g className="proof-overlay">
+        <g className="target-overlay">
           <rect x={0} y={0} width={VB} height={VB} className="sheet-paper" />
           {flatRegions(id, overlay)}
         </g>

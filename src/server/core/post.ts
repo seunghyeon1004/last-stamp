@@ -9,7 +9,7 @@ const MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'O
 export function postTitle(date: string): string {
   const p = puzzleFor(date);
   const d = new Date(`${date}T00:00:00Z`);
-  return `Overprint No. ${p.number} · ${WEEKDAY[p.weekday]} ${d.getUTCDate()} ${MONTH[d.getUTCMonth()]} · par ${p.par}`;
+  return `Last Stamp #${p.number}: ${WEEKDAY[p.weekday]} ${d.getUTCDate()} ${MONTH[d.getUTCMonth()]}, par ${p.par}`;
 }
 
 /** Creates the daily post for `date` once; returns the existing post id when already made. */
@@ -20,7 +20,7 @@ export async function ensureDailyPost(date: string = utcDateKey()): Promise<{ po
     title: postTitle(date),
     entry: 'default',
     postData: { date },
-    textFallback: { text: `Overprint daily print for ${date}. Open this post in the Reddit app or on reddit.com to play.` },
+    textFallback: { text: `Last Stamp, the daily stamp puzzle for ${date}. Open this post in the Reddit app or on reddit.com to play.` },
   });
   await linkPost(post.id, date);
   await ensureSticky(post.id);
@@ -37,7 +37,7 @@ export async function ensureSticky(postId: string): Promise<string | null> {
       id: postId,
       text:
         `Results go here. Use "Comment my result" in the game to reply with your press count, ` +
-        `or reply with your theory about which ink went down first.`,
+        `or reply with the order you stamped in.`,
     });
     try {
       await comment.distinguish(true);

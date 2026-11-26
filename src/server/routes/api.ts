@@ -112,7 +112,7 @@ api.post('/share', async (c) => {
   const today = utcDateKey();
   const date = await dateForPost(postId, today);
   const result = await getResult(date, userId);
-  if (!result) return c.json(fail('finish the print first'), 400);
+  if (!result) return c.json(fail('finish the card first'), 400);
   const stickyId = await ensureSticky(postId);
   if (!stickyId || !isT1(stickyId)) return c.json(fail('no results thread on this post'), 500);
   const puzzle = puzzleFor(date);
@@ -132,7 +132,7 @@ api.post('/flair', async (c) => {
   if (!username) return c.json(fail('log in to wear a title'), 400);
   const player = await getPlayer(userId, utcDateKey());
   const title = titleFor(player);
-  if (!title) return c.json(fail('finish a print first'), 400);
+  if (!title) return c.json(fail('finish a card first'), 400);
   const text = flairText(title, player.streak);
   await reddit.setUserFlair({
     subredditName,

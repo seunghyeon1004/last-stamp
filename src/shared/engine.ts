@@ -1,4 +1,4 @@
-// Overprint core rules: a 5x5 sheet, opaque inks, fixed-shape stamps (no rotation).
+// Last Stamp core rules: a 5x5 card, opaque inks, fixed-shape stamps (no rotation).
 // A press lays one stamp's ink on every cell of its footprint, covering what was there.
 
 export const SIZE = 5;
@@ -139,7 +139,7 @@ export type Solution = { par: number; presses: Press[] };
  * Minimum number of presses that reproduce `target`, with one optimal press order.
  * Works backwards ("peeling"): the last press must show its ink on every cell it covers
  * that a later press has not already explained. Breadth-first over the set of explained
- * cells gives the true minimum. Returns null when the target cannot be printed.
+ * cells gives the true minimum. Returns null when the target cannot be made.
  */
 export function solve(stamps: readonly Stamp[], target: readonly Cell[], maxDepth = 12): Solution | null {
   let goal = 0;
@@ -168,7 +168,7 @@ export function solve(stamps: readonly Stamp[], target: readonly Cell[], maxDept
         parent.set(ns, { prev: state, press: p.press });
         if (ns === goal >>> 0) {
           // Walking back from the goal visits the deepest peel first. The deepest peel is
-          // the earliest press on paper, so this walk is already in printing order.
+          // the earliest press on the card, so this walk is already in pressing order.
           const presses: Press[] = [];
           let s = ns;
           while (s !== 0) {

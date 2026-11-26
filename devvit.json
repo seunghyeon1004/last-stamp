@@ -1,6 +1,6 @@
 {
   "$schema": "https://developers.reddit.com/schema/config-file.v1.json",
-  "name": "overprint-press",
+  "name": "last-stamp",
   "post": {
     "dir": "dist/client",
     "entrypoints": {
@@ -34,8 +34,8 @@
   "menu": {
     "items": [
       {
-        "label": "Post today's Overprint",
-        "description": "Create today's daily print post (once per day)",
+        "label": "Post today's Last Stamp",
+        "description": "Create today's daily card post (once per day)",
         "location": "subreddit",
         "forUserType": "moderator",
         "endpoint": "/internal/menu/post-today"
@@ -58,8 +58,5 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build"
-  },
-  "dev": {
-    "subreddit": "overprint_press_dev"
   }
 }

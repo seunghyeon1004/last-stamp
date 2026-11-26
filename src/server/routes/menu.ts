@@ -10,7 +10,7 @@ menu.post('/post-today', async (c) => {
     const { postId, created } = await ensureDailyPost();
     return c.json<UiResponse>(
       {
-        showToast: created ? "Today's print is posted" : "Today's print already exists",
+        showToast: created ? "Today's card is posted" : "Today's card already exists",
         navigateTo: `https://reddit.com/r/${context.subredditName}/comments/${postId}`,
       },
       200

@@ -28,7 +28,7 @@ export async function sendComplete(body: CompleteRequest, journeyId?: string): P
 /** Per-viewer convenience only: an unfinished sheet survives a reload. Never the source of truth. */
 export function saveDraft(date: string, data: unknown): void {
   try {
-    localStorage.setItem(`overprint:draft:${date}`, JSON.stringify(data));
+    localStorage.setItem(`laststamp:draft:${date}`, JSON.stringify(data));
   } catch {
     /* storage can be unavailable */
   }
@@ -36,7 +36,7 @@ export function saveDraft(date: string, data: unknown): void {
 
 export function loadDraft<T>(date: string): T | null {
   try {
-    const raw = localStorage.getItem(`overprint:draft:${date}`);
+    const raw = localStorage.getItem(`laststamp:draft:${date}`);
     return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
@@ -45,7 +45,7 @@ export function loadDraft<T>(date: string): T | null {
 
 export function clearDraft(date: string): void {
   try {
-    localStorage.removeItem(`overprint:draft:${date}`);
+    localStorage.removeItem(`laststamp:draft:${date}`);
   } catch {
     /* ignore */
   }

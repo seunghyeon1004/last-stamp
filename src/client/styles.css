@@ -1,6 +1,6 @@
-/* Hallmark · redesign: restyle (layout kept, objects rebuilt) · shape: app screen · theme: riso (adapted: four game drums, deep blue for words, fluorescent pink for the primary) · genre: playful · signature: the rubber stamp block coming down on the sheet · texture: riso family only (speck grain + misregistration) */
-/* critique: the old objects were flat beige boxes and plain rectangles; the stamp now has a block, a label and an inked lip, the sheet is paper with crop marks, grain and overprint fringes, and controls share one system */
-/* waive 38iii: the wordmark carries the one misregistered word (riso signature), nothing else does */
+/* Hallmark · redesign: restyle (layout kept, objects rebuilt) · shape: app screen · theme: custom (a stamping desk: slate desk, white cards, kraft result card, wooden stamp blocks, four stamp-pad inks) · genre: playful · signature: the rubber stamp block coming down on the card · texture: paper speck grain on cards only */
+/* critique: the old objects were flat beige boxes; now the stamp is a wooden block with an inked rubber face drawn cell by cell, the card is paper with crop marks and grain, and controls share one system on a slate desk */
+/* waive 38iii: the wordmark is set as one rubber-stamp impression, nothing else is */
 
 @import '@fontsource/bricolage-grotesque/latin-500.css';
 @import '@fontsource/bricolage-grotesque/latin-700.css';
@@ -8,45 +8,53 @@
 @import '@fontsource/ibm-plex-mono/latin-500.css';
 
 :root {
-  /* paper and words */
-  --paper: #f5f0e6;
-  --sheet: #fbf8f1;
-  --ink: #1f2a5c; /* deep blue drum: every word and rule (11.9:1 on paper) */
-  --ink-soft: #4e5478; /* 6.5:1 on paper */
-  --rule: #cfc7b6;
-  --rule-strong: #a9a08c;
-  --accent: #ff5ca8; /* fluorescent pink drum: the primary fill */
-  --accent-ink: #1a1f4a; /* 5.5:1 on the pink */
-  --accent-press: #f24597;
-  --focus: #2f5fb3;
-  --shade: rgba(31, 42, 92, 0.16);
-  --shade-deep: rgba(31, 42, 92, 0.3);
-  --scrim: rgba(31, 42, 92, 0.38);
+  /* the desk and the words on it */
+  --desk: #2b2e35;
+  --desk-2: #33363e;
+  --ink: #f1ece2; /* words on the desk: 11.6:1 */
+  --ink-soft: #b8b2a6; /* 6.4:1 on the desk */
+  --dark: #22242a; /* words on cards and kraft: 8.9:1 on kraft, 14.6:1 on card */
+  --dark-soft: #4d4a44;
 
-  /* the four game drums, each with its own screen mark and a darker edge where ink builds up */
-  --ink-red: #ef4b4b;
-  --ink-red-mark: #ef4b4b;
-  --ink-red-edge: #b92f37;
-  --ink-blue: #2f5fb3;
-  --ink-blue-mark: #6a92d6;
-  --ink-blue-edge: #1d3f84;
-  --ink-yellow: #ffd92e;
-  --ink-yellow-mark: #c9a20a;
-  --ink-yellow-edge: #b48f00;
-  --ink-green: #00a36c;
-  --ink-green-mark: #5fd0a2;
-  --ink-green-edge: #00704a;
+  /* surfaces */
+  --sheet: #faf8f3; /* the white card you stamp on */
+  --kraft: #d8c29d;
+  --rule: #d9d3c7;
+  --rule-strong: #b3ab9b;
+  --rule-desk: #5a5d66;
+
+  --accent: #ffc247; /* marigold: the primary action (9.7:1 with dark text) */
+  --accent-press: #f2ae1f;
+  --accent-ink: #22242a;
+  --focus: #7fb2ff; /* 6.3:1 on the desk */
+  --shade: rgba(0, 0, 0, 0.22);
+  --shade-deep: rgba(0, 0, 0, 0.4);
+  --scrim: rgba(18, 19, 23, 0.55);
+
+  /* four stamp-pad inks, each with its own screen mark and a darker edge */
+  --ink-red: #e4572e;
+  --ink-red-mark: #e4572e;
+  --ink-red-edge: #a8361a;
+  --ink-blue: #2d5da8;
+  --ink-blue-mark: #6b95d8;
+  --ink-blue-edge: #1b3f7a;
+  --ink-yellow: #e0a526;
+  --ink-yellow-mark: #b07e10;
+  --ink-yellow-edge: #9a6c08;
+  --ink-green: #1f9e89;
+  --ink-green-mark: #6ccfbe;
+  --ink-green-edge: #126b5c;
 
   /* stamp blocks */
   --wood-hi: #d9b07a;
   --wood-lo: #b3854e;
-  --wood-edge: #7a5530;
-  --wood-grain: rgba(122, 85, 48, 0.22);
+  --wood-edge: #6e4a26;
+  --wood-grain: rgba(110, 74, 38, 0.24);
   --label: #fdfaf2;
   --bevel-hi: rgba(255, 255, 255, 0.35);
-  --bevel-lo: rgba(0, 0, 0, 0.12);
+  --bevel-lo: rgba(0, 0, 0, 0.14);
 
-  --texture-opacity: 0.12; /* scoped to the sheet plate (budget 0.15) */
+  --texture-opacity: 0.12; /* scoped to the cards (budget 0.15) */
 
   --font-display: 'Bricolage Grotesque', 'Arial Narrow', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
@@ -73,7 +81,7 @@
   --dur-short: 180ms;
   --dur-press: 520ms;
   --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 * {
@@ -94,7 +102,9 @@ body {
 }
 
 body {
-  background: var(--paper);
+  background:
+    radial-gradient(120% 80% at 50% 0%, var(--desk-2), transparent 70%),
+    var(--desk);
   color: var(--ink);
   font-family: var(--font-display);
   font-weight: 500;
@@ -112,15 +122,18 @@ button {
 /* ---------- masthead ---------- */
 
 .wordmark {
+  display: inline-block;
   margin: 0;
+  padding: var(--s-1) var(--s-2);
   font-weight: 800;
   font-size: var(--t-xl);
-  letter-spacing: -0.02em;
+  letter-spacing: 0.01em;
   line-height: 1;
   text-transform: uppercase;
-  color: var(--ink);
-  /* the one misregistered word: a pink pass a hair off under the blue */
-  text-shadow: 1.5px 1px 0 var(--accent);
+  color: var(--ink-red);
+  border: 2.5px solid var(--ink-red);
+  border-radius: 5px;
+  transform: rotate(-2deg);
 }
 
 .issue {
@@ -161,17 +174,18 @@ button {
 .btn:disabled {
   cursor: default;
   color: var(--ink-soft);
-  border-color: var(--rule-strong);
+  border-color: var(--rule-desk);
   background: transparent;
   box-shadow: none;
 }
 
-/* primary: the pink drum, sitting on its own printed shadow; pressed, it lands */
+/* primary: marigold, on its own edge; pressed, it goes down like a stamp */
 .btn-primary {
   background: var(--accent);
   color: var(--accent-ink);
   font-weight: 800;
-  box-shadow: 3px 3px 0 var(--ink);
+  border-color: var(--accent-ink);
+  box-shadow: 0 3px 0 var(--accent-ink);
 }
 
 .btn-primary:not(:disabled):hover {
@@ -179,8 +193,8 @@ button {
 }
 
 .btn-primary:not(:disabled):active {
-  transform: translate(3px, 3px);
-  box-shadow: 0 0 0 var(--ink);
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--accent-ink);
 }
 
 .btn-primary:disabled {
@@ -190,11 +204,12 @@ button {
 
 /* secondary: an outline in the blue drum */
 .btn-quiet {
-  background: var(--sheet);
+  background: transparent;
+  color: var(--ink);
 }
 
 .btn-quiet:not(:disabled):hover {
-  background: var(--paper);
+  background: var(--desk-2);
 }
 
 .btn-quiet:not(:disabled):active {
@@ -233,7 +248,7 @@ button {
   justify-content: space-between;
   align-items: flex-end;
   padding-bottom: var(--s-2);
-  border-bottom: 2px solid var(--ink);
+  border-bottom: 1.5px solid var(--rule-desk);
 }
 
 .bench {
@@ -294,18 +309,18 @@ button {
   color: var(--ink-soft);
 }
 
-.proof {
+.target {
   margin: 0;
   width: clamp(76px, 22vw, 104px);
 }
 
-.proof-sheet {
+.target-sheet {
   display: block;
   width: 100%;
   box-shadow: 0 1px 2px var(--shade), 2px 3px 0 var(--shade);
 }
 
-.proof figcaption {
+.target figcaption {
   margin-top: var(--s-1);
   font-size: var(--t-xs);
   color: var(--ink-soft);
@@ -370,7 +385,7 @@ button {
 }
 
 .crop-marks line {
-  stroke: var(--ink);
+  stroke: var(--dark);
   stroke-width: 1.5;
 }
 
@@ -388,7 +403,7 @@ button {
 
 .ghost-edge {
   fill: none;
-  stroke: var(--ink);
+  stroke: var(--dark);
   stroke-width: 4;
   stroke-dasharray: 10 8;
   stroke-linecap: square;
@@ -401,7 +416,7 @@ button {
   }
 }
 
-.proof-overlay {
+.target-overlay {
   opacity: 0.9;
 }
 
@@ -548,7 +563,7 @@ button {
   bottom: -12px;
   height: 3px;
   border-radius: 2px;
-  background: var(--ink);
+  background: var(--accent);
 }
 
 .stamp-uses {
@@ -561,8 +576,8 @@ button {
   display: grid;
   place-items: center;
   border-radius: 11px;
-  background: var(--ink);
-  color: var(--sheet);
+  background: var(--accent);
+  color: var(--accent-ink);
   font-family: var(--font-mono);
   font-size: var(--t-xs);
   font-variant-numeric: tabular-nums;
@@ -600,11 +615,15 @@ svg.coach {
 }
 
 .result {
+  --ink: var(--dark);
+  --ink-soft: var(--dark-soft);
+  --rule-desk: var(--rule-strong);
   width: min(440px, calc(100dvw - 32px));
-  background: var(--sheet);
-  border: 2px solid var(--ink);
+  color: var(--dark);
+  background: var(--kraft);
+  border: 2px solid var(--dark);
   border-radius: var(--radius);
-  box-shadow: 5px 5px 0 var(--accent);
+  box-shadow: 0 18px 40px -12px var(--shade-deep);
   padding: var(--s-4);
   animation: slide 260ms var(--ease-out);
 }
@@ -642,7 +661,7 @@ svg.coach {
 }
 
 .result-par.is-par {
-  background: var(--ink-yellow);
+  background: var(--accent);
 }
 
 .strip {
@@ -740,7 +759,7 @@ svg.coach {
 
 .wordmark-sm {
   font-size: var(--t-md);
-  text-shadow: 1px 1px 0 var(--accent);
+  border-width: 2px;
 }
 
 .splash-mast .issue {
@@ -764,8 +783,9 @@ svg.coach {
   padding: 1px var(--s-2) 2px;
   font-size: 0.72em;
   vertical-align: 0.12em;
-  background: var(--ink-yellow);
-  border: 1.5px solid var(--ink);
+  color: var(--accent-ink);
+  background: var(--accent);
+  border: 1.5px solid var(--accent-ink);
   border-radius: var(--radius);
 }
 
@@ -821,7 +841,7 @@ svg.coach {
 }
 
 .eq-stamp .block-top {
-  padding: 6px;
+  padding: var(--s-2);
 }
 
 .eq-presses {

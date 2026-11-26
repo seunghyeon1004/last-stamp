@@ -14,7 +14,7 @@ import {
   type Stamp,
 } from './engine';
 
-export const GENERATOR_VERSION = 2;
+export const GENERATOR_VERSION = 3;
 
 export type Puzzle = {
   date: string; // YYYY-MM-DD (UTC)
@@ -175,7 +175,7 @@ export function puzzleFor(date: string): Puzzle {
   if (hit) return hit;
   const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
   const band = BANDS[weekday]!;
-  const base = hashString(`overprint:v${GENERATOR_VERSION}:${date}`);
+  const base = hashString(`last-stamp:v${GENERATOR_VERSION}:${date}`);
   for (let attempt = 0; attempt < 5000; attempt++) {
     const r = rng((base + Math.imul(attempt, 0x9e3779b1)) >>> 0);
     const c = candidate(r, band);
