@@ -397,14 +397,18 @@ button {
   pointer-events: none;
 }
 
-.ghost rect {
-  opacity: 0.45;
+.ghost-veil {
+  fill: var(--sheet);
+  opacity: 1;
+}
+
+.ghost-tint {
+  opacity: 0.28;
 }
 
 .ghost-edge {
   fill: none;
-  stroke: var(--dark);
-  stroke-width: 4;
+  stroke-width: 6;
   stroke-dasharray: 10 8;
   stroke-linecap: square;
   animation: march 900ms linear infinite;

@@ -211,10 +211,14 @@ export function Sheet({ id, label, stamps, flat, presses, fresh, ghost, overlay,
 
       {ghost && (
         <g className="ghost" pointerEvents="none">
+          {/* paper over what the press will cover, a light tint and a clear outline in the stamp's ink */}
           {ghostCells.map((i) => (
-            <rect key={i} x={(i % SIZE) * U} y={Math.floor(i / SIZE) * U} width={U} height={U} fill={inkFill(id, ghost.stamp.ink)} />
+            <rect key={`w${i}`} x={(i % SIZE) * U} y={Math.floor(i / SIZE) * U} width={U} height={U} className="ghost-veil" />
           ))}
-          <path d={outlinePath(ghostCells)} className="ghost-edge" />
+          {ghostCells.map((i) => (
+            <rect key={`t${i}`} x={(i % SIZE) * U} y={Math.floor(i / SIZE) * U} width={U} height={U} fill={inkFill(id, ghost.stamp.ink)} className="ghost-tint" />
+          ))}
+          <path d={outlinePath(ghostCells)} className="ghost-edge" style={{ stroke: INK_VAR[ghost.stamp.ink].edge }} />
         </g>
       )}
 
