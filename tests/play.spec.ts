@@ -130,3 +130,64 @@ test('open desk: compose a card and see its par live', async ({ page }, info) =>
   expect(overflow).toBeLessThanOrEqual(0);
   await page.screenshot({ path: `${SHOTS}/desk-make-${info.project.name}.png` });
 });
+
+test('keyboard only: solve today at par without a pointer', async ({ page }) => {
+  const puzzle = puzzleFor(utcDateKey());
+  const { startPos } = await import('../src/client/a11y');
+  await page.goto('/game.html');
+  // tab until the card has focus
+  for (let i = 0; i < 20; i++) {
+    await page.keyboard.press('Tab');
+    if (await page.evaluate(() => document.activeElement?.classList.contains('work-sheet'))) break;
+  }
+  await expect(page.locator('svg.work-sheet')).toBeFocused();
+  await expect(page.getByRole('application', { name: /Your card/ })).toBeVisible();
+  for (const press of puzzle.solution) {
+    const idx = puzzle.stamps.findIndex((s) => s.id === press.stamp);
+    await page.keyboard.press(String(idx + 1));
+    await page.keyboard.press('Enter'); // outline appears in the middle
+    const start = startPos(puzzle.stamps[idx]!);
+    const dr = press.row - start.row;
+    const dc = press.col - start.col;
+    for (let k = 0; k < Math.abs(dr); k++) await page.keyboard.press(dr > 0 ? 'ArrowDown' : 'ArrowUp');
+    for (let k = 0; k < Math.abs(dc); k++) await page.keyboard.press(dc > 0 ? 'ArrowRight' : 'ArrowLeft');
+    await page.keyboard.press('Enter');
+  }
+  await expect(page.locator('.result')).toBeVisible();
+  await expect(page.locator('.result-par')).toHaveText('on par');
+});
+
+test('screen-reader names: every stamp and the card are labelled', async ({ page }) => {
+  const puzzle = puzzleFor(utcDateKey());
+  await page.goto('/game.html');
+  await expect(page.getByRole('button', { name: /stamp, (solid|stripes|dots|crosshatch), \d+ cells/ })).toHaveCount(puzzle.stamps.length);
+  await expect(page.getByRole('img', { name: 'Target card' })).toBeVisible();
+  const desc = await page.locator('svg.work-sheet desc').textContent();
+  expect(desc).toMatch(/^Target: Row 1:/);
+  await expect(page.locator('[aria-live="assertive"]')).toHaveCount(1);
+});
+
+test('reduced motion: no stamp-block animation, ink shows at once', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const puzzle = puzzleFor(utcDateKey());
+  await page.goto('/game.html');
+  const press = puzzle.solution[0]!;
+  const idx = puzzle.stamps.findIndex((s) => s.id === press.stamp);
+  await page.locator('.tray .stamp').nth(idx).click();
+  let tap: [number, number] = [0, 0];
+  for (let r = 0; r < SIZE; r++)
+    for (let c = 0; c < SIZE; c++) {
+      const q = placeAt(puzzle.stamps[idx]!, r, c);
+      if (q.row === press.row && q.col === press.col) tap = [r, c];
+    }
+  await tapCell(page, tap[0], tap[1]);
+  await page.getByRole('button', { name: 'Press', exact: true }).click();
+  const state = await page.evaluate(() => ({
+    block: getComputedStyle(document.querySelector('.press-block')!).display,
+    ink: getComputedStyle(document.querySelector('.fresh-press')!).opacity,
+    anim: getComputedStyle(document.querySelector('.fresh-press')!).animationName,
+  }));
+  expect(state.block).toBe('none');
+  expect(state.ink).toBe('1');
+  expect(state.anim).toBe('none');
+});

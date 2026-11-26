@@ -1,11 +1,13 @@
 import './styles.css';
 
-import { StrictMode, useEffect, useMemo, useRef, useState } from 'react';
+import { StrictMode, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import { showToast } from '@devvit/web/client';
 import { checkComposition, deskStamps, deskSunday, DESK_RULES } from '../shared/desk';
 import { utcDateKey } from '../shared/daily';
-import { sheetFromString, type Press, type Stamp } from '../shared/engine';
+import { sheetFromString, simulate, type Press, type Stamp } from '../shared/engine';
+import { cellName, describeCard, keyAction } from './a11y';
+import { INK_NAME } from './ink';
 import type { DeskEntry, DeskResponse } from '../shared/api';
 import { Sheet, placeAt } from './Sheet';
 import { StampButton, shapeDims } from './StampButton';
@@ -62,6 +64,7 @@ export function Desk() {
   const [ghost, setGhost] = useState<{ row: number; col: number } | null>(null);
   const [fresh, setFresh] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
+  const [announce, setAnnounce] = useState('');
   const ghostBeforeDown = useRef<{ row: number; col: number } | null>(null);
 
   const load = () =>
@@ -83,6 +86,7 @@ export function Desk() {
     if (!stamp || !ghost) return;
     setPresses((p) => [...p, { stamp: stamp.id, row: ghost.row, col: ghost.col }]);
     setFresh(presses.length);
+    setAnnounce(`Pressed ${INK_NAME[stamp.ink]} at ${cellName(ghost.row, ghost.col)}.`);
     setGhost(null);
   };
 
@@ -99,6 +103,16 @@ export function Desk() {
       }
     }
     setGhost(pos);
+  };
+
+  const onKey = (e: KeyboardEvent<SVGSVGElement>) => {
+    const a = keyAction(e.key, stamp, ghost);
+    if (a.kind === 'none') return;
+    e.preventDefault();
+    if (a.kind === 'clear') return setGhost(null);
+    if (a.kind === 'press') return press();
+    setGhost(a.pos);
+    if (stamp) setAnnounce(`${INK_NAME[stamp.ink]} stamp at ${cellName(a.pos.row, a.pos.col)}. Enter to press.`);
   };
 
   const submit = async () => {
@@ -170,15 +184,20 @@ export function Desk() {
                 {info}
               </p>
             </section>
+            <p className="sr-only" aria-live="assertive">
+              {announce}
+            </p>
             <section className="press-bed">
               <Sheet
                 id="compose"
-                label="Your card"
+                label="Your card. Arrow keys move the stamp, Enter presses."
                 stamps={stamps}
                 presses={presses}
                 fresh={fresh}
                 ghost={stamp && ghost ? { stamp, ...ghost } : null}
                 onPointerCell={onCell}
+                onKey={onKey}
+                description={describeCard(simulate(stamps, presses))}
                 className="work-sheet"
               />
             </section>

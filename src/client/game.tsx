@@ -1,6 +1,6 @@
 import './styles.css';
 
-import { StrictMode, useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
+import { StrictMode, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { canRunAsUser, requestExpandedMode, showToast } from '@devvit/web/client';
 import { createRoot } from 'react-dom/client';
 import { puzzleFor, utcDateKey, isDateKey } from '../shared/daily';
@@ -9,6 +9,8 @@ import type { DayStats, MyResult, PlayerStats, StateResponse } from '../shared/a
 import { nextTitle, titleFor } from '../shared/titles';
 import { clearDraft, fetchState, loadDraft, saveDraft, sendComplete, shareResult, wearFlair } from './api';
 import { journey } from './journey';
+import { cellName, describeCard, keyAction } from './a11y';
+import { INK_NAME } from './ink';
 import { Sheet, placeAt } from './Sheet';
 import { StampButton, shapeDims } from './StampButton';
 import { InkChip } from './ink';
@@ -180,6 +182,7 @@ export function App() {
   const [flairState, setFlairState] = useState<Busy>('idle');
   const [firstVisit] = useState(() => !seenBefore());
   const [fresh, setFresh] = useState<number | null>(null);
+  const [announce, setAnnounce] = useState('');
 
   const onFlair = () => {
     setFlairState('busy');
@@ -257,6 +260,7 @@ export function App() {
     }));
     setFresh(next.length - 1);
     setGhost(null);
+    setAnnounce(`Pressed ${INK_NAME[stamp.ink]} at ${cellName(ghost.row, ghost.col)}. ${left === 0 ? 'The card matches.' : `${left} ${left === 1 ? 'cell' : 'cells'} to go.`}`);
     try {
       navigator.vibrate?.(12);
     } catch {
@@ -303,6 +307,37 @@ export function App() {
     }
     setGhost(pos);
   };
+
+  // Keyboard play on the card: arrows move the outline, Enter or Space presses, Escape lifts it.
+  const onKey = (e: KeyboardEvent<SVGSVGElement>) => {
+    if (finished) return;
+    const a = keyAction(e.key, stamp, ghost);
+    if (a.kind === 'none') {
+      if (!stamp && (e.key === 'Enter' || e.key === ' ')) setAnnounce('Pick a stamp first: press a number from 1 to ' + puzzle.stamps.length + ', or use Tab.');
+      return;
+    }
+    e.preventDefault();
+    if (a.kind === 'clear') return setGhost(null);
+    if (a.kind === 'press') return doPress();
+    setGhost(a.pos);
+    if (stamp) setAnnounce(`${INK_NAME[stamp.ink]} stamp at ${cellName(a.pos.row, a.pos.col)}. Enter to press.`);
+  };
+
+  // Number keys pick a stamp from anywhere in the game.
+  useEffect(() => {
+    const pick = (e: globalThis.KeyboardEvent) => {
+      if (finished || e.altKey || e.ctrlKey || e.metaKey) return;
+      const n = Number(e.key);
+      if (Number.isInteger(n) && n >= 1 && n <= puzzle.stamps.length) {
+        const s = puzzle.stamps[n - 1]!;
+        setSelected(s.id);
+        setGhost(null);
+        setAnnounce(`${INK_NAME[s.ink]} stamp picked. Move to the card and use the arrow keys.`);
+      }
+    };
+    window.addEventListener('keydown', pick);
+    return () => window.removeEventListener('keydown', pick);
+  }, [finished, puzzle.stamps]);
 
   const undo = () => {
     if (finished || draft.presses.length === 0) return;
@@ -367,10 +402,13 @@ export function App() {
         </div>
       </section>
 
+      <p className="sr-only" aria-live="assertive">
+        {announce}
+      </p>
       <section className="press-bed">
         <Sheet
           id="work"
-          label={finished ? 'Your finished card' : 'Your card'}
+          label={finished ? 'Your finished card' : `Your card, ${left} ${left === 1 ? 'cell' : 'cells'} to go. Arrow keys move the stamp, Enter presses.`}
           stamps={puzzle.stamps}
           presses={presses}
           fresh={fresh}
@@ -378,6 +416,8 @@ export function App() {
           overlay={comparing ? puzzle.target : null}
           aim={finished ? null : puzzle.target}
           onPointerCell={finished ? undefined : onCell}
+          onKey={finished ? undefined : onKey}
+          description={`Target: ${describeCard(puzzle.target)} Your card: ${describeCard(sheet)}`}
           className={`work-sheet ${solvedNow || finished ? 'is-done' : ''} ${stamp && !ghost && !finished && draft.presses.length === 0 ? 'coach' : ''}`}
         />
       </section>

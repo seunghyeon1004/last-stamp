@@ -1,4 +1,4 @@
-import { useRef, type PointerEvent as ReactPointerEvent } from 'react';
+import { useRef, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { SIZE, footprint, shapeOf, type Cell, type Ink, type Press, type Stamp } from '../shared/engine';
 import { INK_VAR, InkDefs, inkFill } from './ink';
 
@@ -95,6 +95,10 @@ type Props = {
   grid?: boolean | undefined;
   /** A faint ghost of the target under the presses, so a fresh sheet shows where to aim. */
   aim?: readonly Cell[] | null | undefined;
+  /** Keyboard play: makes the card focusable and receives its key presses. */
+  onKey?: ((e: KeyboardEvent<SVGSVGElement>) => void) | undefined;
+  /** Longer text for screen readers (a row-by-row reading of the card). */
+  description?: string | undefined;
 };
 
 function flatRegions(svgId: string, cells: readonly Cell[]) {
@@ -104,7 +108,7 @@ function flatRegions(svgId: string, cells: readonly Cell[]) {
   });
 }
 
-export function Sheet({ id, label, stamps, flat, presses, fresh, ghost, overlay, onPointerCell, className, grid, aim }: Props) {
+export function Sheet({ id, label, stamps, flat, presses, fresh, ghost, overlay, onPointerCell, className, grid, aim, onKey, description }: Props) {
   const ref = useRef<SVGSVGElement>(null);
   const dragging = useRef(false);
 
@@ -167,11 +171,16 @@ export function Sheet({ id, label, stamps, flat, presses, fresh, ghost, overlay,
       ref={ref}
       className={className}
       viewBox={`${-M} ${-M} ${VB + 2 * M} ${VB + 2 * M}`}
-      role="img"
+      role={onKey ? 'application' : 'img'}
+      aria-roledescription={onKey ? 'stamping card' : undefined}
       aria-label={label}
+      aria-describedby={description ? `${id}-desc` : undefined}
+      tabIndex={onKey ? 0 : undefined}
+      onKeyDown={onKey}
       style={{ touchAction: 'none' }}
       {...handlers}
     >
+      {description && <desc id={`${id}-desc`}>{description}</desc>}
       <InkDefs id={id} />
       <linearGradient id={`${id}-wood`} x1="0" y1="0" x2="1" y2="1">
         <stop offset="0" style={{ stopColor: 'var(--wood-hi)' }} />
