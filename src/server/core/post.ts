@@ -23,7 +23,8 @@ export async function ensureDailyPost(date: string = utcDateKey()): Promise<{ po
     textFallback: { text: `Last Stamp, the daily stamp puzzle for ${date}. Open this post in the Reddit app or on reddit.com to play.` },
   });
   await linkPost(post.id, date);
-  await ensureSticky(post.id);
+  const sticky = await ensureSticky(post.id);
+  console.log(`daily post created: ${date} ${post.id} ${post.url} pinned=${sticky ?? 'none'}`);
   return { postId: post.id, created: true };
 }
 
