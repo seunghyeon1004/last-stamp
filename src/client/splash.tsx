@@ -7,7 +7,7 @@ import { isDateKey, puzzleFor, utcDateKey } from '../shared/daily';
 import type { StateResponse } from '../shared/api';
 import { fetchState } from './api';
 import { Sheet } from './Sheet';
-import { StampGlyph, stampLabel } from './StampButton';
+import { StampBlock, stampLabel } from './StampButton';
 import { longDate, parLine } from './format';
 import { postDate } from './context';
 
@@ -36,14 +36,15 @@ export function Splash() {
     server?.stats.solvers ? `${server.stats.solvers} ${server.stats.solvers === 1 ? 'printer' : 'printers'} today` : null,
     server?.stats.solvers ? `${Math.round((server.stats.atPar / server.stats.solvers) * 100)}% on par` : null,
     server?.player && server.player.streak > 0 ? `your streak ${server.player.streak}` : null,
-  ].filter(Boolean);
+  ].filter((x): x is string => Boolean(x));
 
   return (
     <main className="splash">
       <header className="splash-mast">
         <span className="wordmark wordmark-sm">Overprint</span>
         <span className="issue">
-          No. {puzzle.number} · {longDate(puzzle.date)}
+          <span>No. {puzzle.number}</span>
+          <span>{longDate(puzzle.date)}</span>
         </span>
       </header>
 
@@ -67,7 +68,7 @@ export function Splash() {
           <ul className={`eq-stamps n${n}`}>
             {puzzle.stamps.map((s) => (
               <li key={s.id} className="eq-stamp" aria-label={stampLabel(s)}>
-                <StampGlyph stamp={s} idPrefix="splash-stamp" />
+                <StampBlock stamp={s} idPrefix="splash-stamp" />
               </li>
             ))}
           </ul>
@@ -77,10 +78,12 @@ export function Splash() {
         </div>
       </div>
 
-      <button type="button" className="btn btn-ink btn-big" onClick={open}>
+      <button type="button" className="btn btn-primary btn-big" onClick={open}>
         {done ? 'See my sheet' : 'Start printing'}
       </button>
-      <p className="splash-meta">{meta.length ? meta.join(' · ') : 'Ink is opaque: later presses cover earlier ones.'}</p>
+      <p className="splash-meta">
+        {meta.length ? meta.map((m) => <span key={m}>{m}</span>) : <span>Ink is opaque: later presses cover earlier ones.</span>}
+      </p>
     </main>
   );
 }

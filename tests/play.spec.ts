@@ -7,9 +7,9 @@ const SHOTS = 'docs/screens';
 
 async function tapCell(page: Page, row: number, col: number) {
   const box = (await page.locator('svg.work-sheet').boundingBox())!;
-  const unit = box.width / (SIZE * 100 + 24);
-  const x = box.x + (12 + col * 100 + 50) * unit;
-  const y = box.y + (12 + row * 100 + 50) * unit;
+  const unit = box.width / (SIZE * 100 + 28);
+  const x = box.x + (14 + col * 100 + 50) * unit;
+  const y = box.y + (14 + row * 100 + 50) * unit;
   await page.mouse.click(x, y);
 }
 

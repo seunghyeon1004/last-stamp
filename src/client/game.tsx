@@ -138,7 +138,7 @@ function ResultCard({
             {shareState === 'done' ? 'Commented' : shareState === 'busy' ? 'Posting…' : 'Comment my result'}
           </button>
         )}
-        <button type="button" className="btn btn-ink" onClick={onClose}>
+        <button type="button" className="btn btn-primary" onClick={onClose}>
           See my sheet
         </button>
       </div>
@@ -168,6 +168,7 @@ export function App() {
   const [shareState, setShareState] = useState<Busy>('idle');
   const [flairState, setFlairState] = useState<Busy>('idle');
   const [firstVisit] = useState(() => !seenBefore());
+  const [fresh, setFresh] = useState<number | null>(null);
 
   const onFlair = () => {
     setFlairState('busy');
@@ -243,7 +244,13 @@ export function App() {
       undos: d.undos,
       startedAt: d.startedAt ?? Date.now(),
     }));
+    setFresh(next.length - 1);
     setGhost(null);
+    try {
+      navigator.vibrate?.(12);
+    } catch {
+      /* no haptics */
+    }
   }, [stamp, ghost, finished, draft.presses, puzzle]);
 
   // Completion: verify on the server, then show the card once.
@@ -321,7 +328,8 @@ export function App() {
         <div>
           <h1 className="wordmark">Overprint</h1>
           <p className="issue">
-            No. {puzzle.number} · {longDate(puzzle.date)}
+            <span>No. {puzzle.number}</span>
+            <span>{longDate(puzzle.date)}</span>
           </p>
         </div>
         <div className="counter" aria-label={`${draft.presses.length} presses, par ${puzzle.par}`}>
@@ -340,7 +348,7 @@ export function App() {
           <p className="clock">
             {finished
               ? `Done in ${duration(finished.result.ms)}`
-              : `${left} ${left === 1 ? 'cell' : 'cells'} to go${elapsed ? ` · ${duration(elapsed)}` : ''}`}
+              : `${left} ${left === 1 ? 'cell' : 'cells'} to go${elapsed ? `, ${duration(elapsed)}` : ''}`}
           </p>
         </div>
       </section>
@@ -351,6 +359,7 @@ export function App() {
           label={finished ? 'Your finished sheet' : 'Your sheet'}
           stamps={puzzle.stamps}
           presses={presses}
+          fresh={fresh}
           ghost={stamp && ghost && !finished ? { stamp, ...ghost } : null}
           overlay={comparing ? puzzle.target : null}
           onPointerCell={finished ? undefined : onCell}
@@ -397,11 +406,11 @@ export function App() {
           Proof
         </button>
         {finished ? (
-          <button type="button" className="btn btn-ink" onClick={() => setShowCard(true)}>
+          <button type="button" className="btn btn-primary" onClick={() => setShowCard(true)}>
             Result
           </button>
         ) : (
-          <button type="button" className="btn btn-ink" onClick={doPress} disabled={!stamp || !ghost}>
+          <button type="button" className="btn btn-primary" onClick={doPress} disabled={!stamp || !ghost}>
             Press
           </button>
         )}

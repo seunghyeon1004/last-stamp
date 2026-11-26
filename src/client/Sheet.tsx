@@ -1,37 +1,80 @@
 import { useRef, type PointerEvent as ReactPointerEvent } from 'react';
-import { SIZE, footprint, shapeOf, type Cell, type Press, type Stamp } from '../shared/engine';
-import { InkDefs, inkFill } from './ink';
+import { SIZE, footprint, shapeOf, type Cell, type Ink, type Press, type Stamp } from '../shared/engine';
+import { INK_VAR, InkDefs, inkFill } from './ink';
 
 const U = 100; // viewBox units per cell
 const VB = SIZE * U;
+const M = 14; // paper margin around the 5x5 bed, in viewBox units
 
-/** Small, deterministic misregistration per press so layers peek out at the edges like a real print. */
+/** Small, deterministic misregistration per press: layers land a hair off, like a real drum. */
 function jitter(i: number): [number, number] {
   const h = Math.imul(i + 1, 0x9e3779b1) >>> 0;
   return [((h & 7) - 3.5) * 0.9, (((h >>> 3) & 7) - 3.5) * 0.9];
 }
 
-function CellRects({ cells, fill }: { cells: number[]; fill: string }) {
+/** Outline of a set of cells: only the edges that face outside the set. */
+export function outlinePath(cells: readonly number[]): string {
+  const set = new Set(cells);
+  const d: string[] = [];
+  for (const i of cells) {
+    const r = Math.floor(i / SIZE);
+    const c = i % SIZE;
+    const x = c * U;
+    const y = r * U;
+    if (r === 0 || !set.has(i - SIZE)) d.push(`M${x} ${y}H${x + U}`);
+    if (r === SIZE - 1 || !set.has(i + SIZE)) d.push(`M${x} ${y + U}H${x + U}`);
+    if (c === 0 || !set.has(i - 1)) d.push(`M${x} ${y}V${y + U}`);
+    if (c === SIZE - 1 || !set.has(i + 1)) d.push(`M${x + U} ${y}V${y + U}`);
+  }
+  return d.join('');
+}
+
+/** One inked region: an opaque body and a multiplied rim, so where it crosses another ink a
+ *  thin overprint fringe shows (the riso third colour), while the body stays opaque. */
+function InkRegion({ svgId, ink, cells }: { svgId: string; ink: Ink; cells: readonly number[] }) {
   return (
     <>
       {cells.map((i) => (
-        <rect key={i} x={(i % SIZE) * U} y={Math.floor(i / SIZE) * U} width={U + 0.5} height={U + 0.5} fill={fill} />
+        <rect key={i} x={(i % SIZE) * U} y={Math.floor(i / SIZE) * U} width={U + 0.6} height={U + 0.6} fill={inkFill(svgId, ink)} />
       ))}
+      <path d={outlinePath(cells)} className="ink-rim" style={{ stroke: INK_VAR[ink].edge }} />
     </>
   );
 }
 
-function RegistrationMarks() {
-  const marks = [];
-  for (let r = 1; r < SIZE; r++)
-    for (let c = 1; c < SIZE; c++)
-      marks.push(
-        <g key={`${r}-${c}`} stroke="#B9AF9E" strokeWidth="2">
-          <line x1={c * U - 7} y1={r * U} x2={c * U + 7} y2={r * U} />
-          <line x1={c * U} y1={r * U - 7} x2={c * U} y2={r * U + 7} />
-        </g>
-      );
-  return <>{marks}</>;
+function CropMarks() {
+  const L = 10;
+  const marks: [number, number, number, number][] = [];
+  for (const [x, y] of [
+    [0, 0],
+    [VB, 0],
+    [0, VB],
+    [VB, VB],
+  ] as const) {
+    const sx = x === 0 ? -1 : 1;
+    const sy = y === 0 ? -1 : 1;
+    marks.push([x + sx * 3, y, x + sx * (3 + L), y], [x, y + sy * 3, x, y + sy * (3 + L)]);
+  }
+  return (
+    <g className="crop-marks" aria-hidden="true">
+      {marks.map(([x1, y1, x2, y2], k) => (
+        <line key={k} x1={x1} y1={y1} x2={x2} y2={y2} />
+      ))}
+    </g>
+  );
+}
+
+function Guides({ strong }: { strong?: boolean }) {
+  const lines = [];
+  for (let k = 1; k < SIZE; k++) {
+    lines.push(<line key={`h${k}`} x1={0} y1={k * U} x2={VB} y2={k * U} />);
+    lines.push(<line key={`v${k}`} x1={k * U} y1={0} x2={k * U} y2={VB} />);
+  }
+  return (
+    <g className={strong ? 'guides guides-strong' : 'guides'} aria-hidden="true">
+      {lines}
+    </g>
+  );
 }
 
 type Props = {
@@ -42,28 +85,24 @@ type Props = {
   flat?: readonly Cell[] | undefined;
   /** Rendering from presses, oldest first (used for the working sheet). */
   presses?: readonly Press[] | undefined;
+  /** Index of a press that has just landed, to play the stamp coming down once. */
+  fresh?: number | null | undefined;
   ghost?: { stamp: Stamp; row: number; col: number } | null | undefined;
   overlay?: readonly Cell[] | null | undefined;
   onPointerCell?: ((row: number, col: number, phase: 'down' | 'move' | 'up') => void) | undefined;
   className?: string | undefined;
-  /** Draw thin cell lines over the sheet so it reads as a puzzle grid. */
+  /** Stronger cell lines so a flat print reads as a puzzle grid. */
   grid?: boolean | undefined;
 };
 
-function GridLines() {
-  const lines = [];
-  for (let k = 0; k <= SIZE; k++) {
-    lines.push(<line key={`h${k}`} x1={0} y1={k * U} x2={VB} y2={k * U} />);
-    lines.push(<line key={`v${k}`} x1={k * U} y1={0} x2={k * U} y2={VB} />);
-  }
-  return (
-    <g stroke="#1D1D1F" strokeOpacity="0.22" strokeWidth="2" pointerEvents="none">
-      {lines}
-    </g>
-  );
+function flatRegions(svgId: string, cells: readonly Cell[]) {
+  return (['R', 'B', 'Y', 'K'] as const).map((ink) => {
+    const idx = cells.flatMap((c, i) => (c === ink ? [i] : []));
+    return idx.length ? <InkRegion key={ink} svgId={svgId} ink={ink} cells={idx} /> : null;
+  });
 }
 
-export function Sheet({ id, label, stamps, flat, presses, ghost, overlay, onPointerCell, className, grid }: Props) {
+export function Sheet({ id, label, stamps, flat, presses, fresh, ghost, overlay, onPointerCell, className, grid }: Props) {
   const ref = useRef<SVGSVGElement>(null);
   const dragging = useRef(false);
 
@@ -71,8 +110,9 @@ export function Sheet({ id, label, stamps, flat, presses, ghost, overlay, onPoin
     const el = ref.current;
     if (!el) return null;
     const box = el.getBoundingClientRect();
-    const col = Math.floor(((e.clientX - box.left) / box.width) * SIZE);
-    const row = Math.floor(((e.clientY - box.top) / box.height) * SIZE);
+    const scale = box.width / (VB + 2 * M);
+    const col = Math.floor((e.clientX - box.left - M * scale) / (U * scale));
+    const row = Math.floor((e.clientY - box.top - M * scale) / (U * scale));
     if (row < 0 || col < 0 || row >= SIZE || col >= SIZE) return null;
     return [row, col];
   };
@@ -103,29 +143,48 @@ export function Sheet({ id, label, stamps, flat, presses, ghost, overlay, onPoin
     : {};
 
   const byId = new Map(stamps.map((s) => [s.id, s]));
+  const ghostCells = ghost ? footprint(shapeOf(ghost.stamp.shape), ghost.row, ghost.col) : [];
+
+  // the wooden block that comes down for the press that just landed
+  let block: { x: number; y: number; w: number; h: number; ink: Ink } | null = null;
+  if (presses && fresh != null && fresh === presses.length - 1) {
+    const p = presses[fresh]!;
+    const s = byId.get(p.stamp);
+    if (s) {
+      const cells = footprint(shapeOf(s.shape), p.row, p.col);
+      const rows = cells.map((i) => Math.floor(i / SIZE));
+      const cols = cells.map((i) => i % SIZE);
+      const x = Math.min(...cols) * U;
+      const y = Math.min(...rows) * U;
+      block = { x: x - 10, y: y - 10, w: (Math.max(...cols) + 1) * U - x + 20, h: (Math.max(...rows) + 1) * U - y + 20, ink: s.ink };
+    }
+  }
 
   return (
     <svg
       ref={ref}
       className={className}
-      viewBox={`-12 -12 ${VB + 24} ${VB + 24}`}
+      viewBox={`${-M} ${-M} ${VB + 2 * M} ${VB + 2 * M}`}
       role="img"
       aria-label={label}
       style={{ touchAction: 'none' }}
       {...handlers}
     >
       <InkDefs id={id} />
-      <rect x="-12" y="-12" width={VB + 24} height={VB + 24} fill="#F7F3EA" />
-      <RegistrationMarks />
+      <linearGradient id={`${id}-wood`} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" style={{ stopColor: 'var(--wood-hi)' }} />
+        <stop offset="1" style={{ stopColor: 'var(--wood-lo)' }} />
+      </linearGradient>
+      <pattern id={`${id}-grainlines`} width="22" height="400" patternUnits="userSpaceOnUse" patternTransform="rotate(8)">
+        <rect x="9" width="1.6" height="400" style={{ fill: 'var(--wood-grain)' }} />
+        <rect x="16" width="1" height="400" style={{ fill: 'var(--wood-grain)' }} />
+      </pattern>
 
-      {flat &&
-        (['R', 'B', 'Y', 'K'] as const).map((ink) => (
-          <CellRects
-            key={ink}
-            cells={flat.flatMap((c, i) => (c === ink ? [i] : []))}
-            fill={inkFill(id, ink)}
-          />
-        ))}
+      <rect x={-M} y={-M} width={VB + 2 * M} height={VB + 2 * M} className="sheet-paper" />
+      <rect x={-M} y={-M} width={VB + 2 * M} height={VB + 2 * M} filter={`url(#${id}-fibre)`} className="sheet-fibre" />
+      <Guides strong={!!grid} />
+
+      {flat && flatRegions(id, flat)}
 
       {presses?.map((p, i) => {
         const s = byId.get(p.stamp);
@@ -133,43 +192,40 @@ export function Sheet({ id, label, stamps, flat, presses, ghost, overlay, onPoin
         const [dx, dy] = jitter(i);
         return (
           <g key={i} transform={`translate(${dx} ${dy})`}>
-            <g className={i === presses.length - 1 ? 'fresh-press' : undefined}>
-              <CellRects cells={footprint(shapeOf(s.shape), p.row, p.col)} fill={inkFill(id, s.ink)} />
+            <g className={i === fresh ? 'fresh-press' : undefined}>
+              <InkRegion svgId={id} ink={s.ink} cells={footprint(shapeOf(s.shape), p.row, p.col)} />
             </g>
           </g>
         );
       })}
 
       {overlay && (
-        <g opacity="0.88">
-          <rect x="0" y="0" width={VB} height={VB} fill="#F7F3EA" />
-          {(['R', 'B', 'Y', 'K'] as const).map((ink) => (
-            <CellRects key={ink} cells={overlay.flatMap((c, i) => (c === ink ? [i] : []))} fill={inkFill(id, ink)} />
-          ))}
+        <g className="proof-overlay">
+          <rect x={0} y={0} width={VB} height={VB} className="sheet-paper" />
+          {flatRegions(id, overlay)}
         </g>
       )}
 
       {ghost && (
         <g className="ghost" pointerEvents="none">
-          {footprint(shapeOf(ghost.stamp.shape), ghost.row, ghost.col).map((i) => (
-            <rect
-              key={i}
-              x={(i % SIZE) * U + 6}
-              y={Math.floor(i / SIZE) * U + 6}
-              width={U - 12}
-              height={U - 12}
-              fill={inkFill(id, ghost.stamp.ink)}
-              fillOpacity="0.45"
-              stroke="#1D1D1F"
-              strokeWidth="4"
-              strokeDasharray="10 8"
-            />
+          {ghostCells.map((i) => (
+            <rect key={i} x={(i % SIZE) * U} y={Math.floor(i / SIZE) * U} width={U} height={U} fill={inkFill(id, ghost.stamp.ink)} />
           ))}
+          <path d={outlinePath(ghostCells)} className="ghost-edge" />
         </g>
       )}
 
-      {grid && <GridLines />}
-      <rect x="-12" y="-12" width={VB + 24} height={VB + 24} filter={`url(#${id}-grain)`} pointerEvents="none" />
+      <rect x={-M} y={-M} width={VB + 2 * M} height={VB + 2 * M} filter={`url(#${id}-grain)`} className="sheet-grain" />
+      <CropMarks />
+
+      {block && (
+        <g className="press-block" key={`block-${fresh}`} pointerEvents="none" aria-hidden="true">
+          <rect x={block.x + 6} y={block.y + 10} width={block.w} height={block.h} rx="8" className="press-block-shadow" />
+          <rect x={block.x} y={block.y} width={block.w} height={block.h} rx="8" fill={`url(#${id}-wood)`} className="press-block-wood" />
+          <rect x={block.x + 3} y={block.y + 3} width={block.w - 6} height={block.h - 16} rx="6" fill={`url(#${id}-grainlines)`} />
+          <rect x={block.x} y={block.y + block.h - 10} width={block.w} height="10" rx="4" style={{ fill: INK_VAR[block.ink].edge }} />
+        </g>
+      )}
     </svg>
   );
 }

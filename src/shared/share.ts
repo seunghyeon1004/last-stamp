@@ -1,6 +1,6 @@
 import type { MyResult } from './api';
 
-const SQUARE: Record<string, string> = { R: '🟥', B: '🟦', Y: '🟨', K: '⬛' };
+const SQUARE: Record<string, string> = { R: '🟥', B: '🟦', Y: '🟨', K: '🟩' };
 
 /** The text of a player's result comment. Plain text, no links. */
 export function shareText(number: number, r: MyResult): string {

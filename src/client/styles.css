@@ -1,18 +1,78 @@
+/* Hallmark · redesign: restyle (layout kept, objects rebuilt) · shape: app screen · theme: riso (adapted: four game drums, deep blue for words, fluorescent pink for the primary) · genre: playful · signature: the rubber stamp block coming down on the sheet · texture: riso family only (speck grain + misregistration) */
+/* critique: the old objects were flat beige boxes and plain rectangles; the stamp now has a block, a label and an inked lip, the sheet is paper with crop marks, grain and overprint fringes, and controls share one system */
+/* waive 38iii: the wordmark carries the one misregistered word (riso signature), nothing else does */
+
 @import '@fontsource/bricolage-grotesque/latin-500.css';
+@import '@fontsource/bricolage-grotesque/latin-700.css';
 @import '@fontsource/bricolage-grotesque/latin-800.css';
 @import '@fontsource/ibm-plex-mono/latin-500.css';
 
 :root {
-  --paper: #f2ede4;
-  --paper-hi: #f7f3ea;
-  --ink: #1d1d1f;
-  --ink-soft: #57534c;
-  --rule: #cfc6b6;
-  --red: #e8414a;
-  --blue: #1f6fb8;
-  --yellow: #f7d417;
-  --display: 'Bricolage Grotesque', 'Arial Narrow', sans-serif;
-  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  /* paper and words */
+  --paper: #f5f0e6;
+  --sheet: #fbf8f1;
+  --ink: #1f2a5c; /* deep blue drum: every word and rule (11.9:1 on paper) */
+  --ink-soft: #4e5478; /* 6.5:1 on paper */
+  --rule: #cfc7b6;
+  --rule-strong: #a9a08c;
+  --accent: #ff5ca8; /* fluorescent pink drum: the primary fill */
+  --accent-ink: #1a1f4a; /* 5.5:1 on the pink */
+  --accent-press: #f24597;
+  --focus: #2f5fb3;
+  --shade: rgba(31, 42, 92, 0.16);
+  --shade-deep: rgba(31, 42, 92, 0.3);
+  --scrim: rgba(31, 42, 92, 0.38);
+
+  /* the four game drums, each with its own screen mark and a darker edge where ink builds up */
+  --ink-red: #ef4b4b;
+  --ink-red-mark: #ef4b4b;
+  --ink-red-edge: #b92f37;
+  --ink-blue: #2f5fb3;
+  --ink-blue-mark: #6a92d6;
+  --ink-blue-edge: #1d3f84;
+  --ink-yellow: #ffd92e;
+  --ink-yellow-mark: #c9a20a;
+  --ink-yellow-edge: #b48f00;
+  --ink-green: #00a36c;
+  --ink-green-mark: #5fd0a2;
+  --ink-green-edge: #00704a;
+
+  /* stamp blocks */
+  --wood-hi: #d9b07a;
+  --wood-lo: #b3854e;
+  --wood-edge: #7a5530;
+  --wood-grain: rgba(122, 85, 48, 0.22);
+  --label: #fdfaf2;
+  --bevel-hi: rgba(255, 255, 255, 0.35);
+  --bevel-lo: rgba(0, 0, 0, 0.12);
+
+  --texture-opacity: 0.12; /* scoped to the sheet plate (budget 0.15) */
+
+  --font-display: 'Bricolage Grotesque', 'Arial Narrow', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* type scale, ratio 1.2 */
+  --t-xs: 12px;
+  --t-sm: 14px;
+  --t-md: 16px;
+  --t-lg: 19px;
+  --t-xl: 23px;
+  --t-2xl: 28px;
+  --t-3xl: 34px;
+
+  /* spacing, 4px base */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+
+  --radius: 3px;
+  --control: 44px;
+  --dur-micro: 90ms;
+  --dur-short: 180ms;
+  --dur-press: 520ms;
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
   color-scheme: light;
 }
 
@@ -27,13 +87,19 @@ body,
   margin: 0;
 }
 
+html,
+body {
+  overflow-x: clip;
+  overflow-y: clip;
+}
+
 body {
   background: var(--paper);
   color: var(--ink);
-  font-family: var(--display);
+  font-family: var(--font-display);
   font-weight: 500;
+  font-size: var(--t-md);
   -webkit-font-smoothing: antialiased;
-  overflow: hidden;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
@@ -43,81 +109,109 @@ button {
   color: inherit;
 }
 
+/* ---------- masthead ---------- */
+
 .wordmark {
   margin: 0;
   font-weight: 800;
-  font-size: 26px;
+  font-size: var(--t-xl);
   letter-spacing: -0.02em;
-  line-height: 0.9;
+  line-height: 1;
   text-transform: uppercase;
-  /* the masthead is overprinted: a red pass slightly out of register under the black */
-  text-shadow: 2px 1px 0 var(--red);
-}
-
-.wordmark-lg {
-  font-size: clamp(34px, 11vw, 52px);
+  color: var(--ink);
+  /* the one misregistered word: a pink pass a hair off under the blue */
+  text-shadow: 1.5px 1px 0 var(--accent);
 }
 
 .issue {
-  margin: 4px 0 0;
-  font-family: var(--mono);
-  font-size: 12px;
+  margin: var(--s-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
   color: var(--ink-soft);
-  letter-spacing: 0.02em;
+  display: flex;
+  gap: var(--s-3);
 }
 
-/* ---------- buttons ---------- */
+/* ---------- controls: one system ---------- */
 
 .btn {
-  border: 0;
+  height: var(--control);
+  min-width: var(--control);
+  padding: 0 var(--s-4);
+  border: 1.5px solid var(--ink);
+  border-radius: var(--radius);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--t-md);
+  line-height: 1;
   cursor: pointer;
-  padding: 0 14px;
-  height: 44px;
-  min-width: 44px;
-  font-size: 15px;
-  border-radius: 2px;
-  transition: transform 80ms ease-out, box-shadow 80ms ease-out;
-}
-
-.btn:disabled {
-  opacity: 0.35;
-  cursor: default;
-  box-shadow: none;
+  transition:
+    transform var(--dur-micro) var(--ease-out),
+    box-shadow var(--dur-micro) var(--ease-out),
+    background-color var(--dur-short) var(--ease-out);
 }
 
 .btn:focus-visible,
 .stamp:focus-visible {
-  outline: 3px solid var(--blue);
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
+  transition: none;
 }
 
-.btn-ink {
-  background: var(--ink);
-  color: var(--paper-hi);
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  box-shadow: 3px 3px 0 var(--red);
-}
-
-.btn-ink:not(:disabled):active {
-  transform: translate(3px, 3px);
-  box-shadow: 0 0 0 var(--red);
-}
-
-.btn-quiet {
+.btn:disabled {
+  cursor: default;
+  color: var(--ink-soft);
+  border-color: var(--rule-strong);
   background: transparent;
-  border: 1.5px solid var(--ink);
+  box-shadow: none;
+}
+
+/* primary: the pink drum, sitting on its own printed shadow; pressed, it lands */
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 800;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: var(--accent-press);
+}
+
+.btn-primary:not(:disabled):active {
+  transform: translate(3px, 3px);
+  box-shadow: 0 0 0 var(--ink);
+}
+
+.btn-primary:disabled {
+  background: transparent;
+  border-style: dashed;
+}
+
+/* secondary: an outline in the blue drum */
+.btn-quiet {
+  background: var(--sheet);
+}
+
+.btn-quiet:not(:disabled):hover {
+  background: var(--paper);
 }
 
 .btn-quiet:not(:disabled):active {
-  background: var(--paper-hi);
+  transform: translate(1px, 1px);
 }
 
 .btn-big {
   height: 52px;
-  padding: 0 28px;
-  font-size: 17px;
+  padding: 0 var(--s-5);
+  font-size: var(--t-lg);
+}
+
+.btn-small {
+  height: 36px;
+  padding: 0 var(--s-3);
+  font-size: var(--t-sm);
+  white-space: nowrap;
 }
 
 /* ---------- game layout: one viewport, phone first ---------- */
@@ -126,108 +220,94 @@ button {
   height: 100%;
   max-width: 520px;
   margin: 0 auto;
-  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  padding: var(--s-3) var(--s-4) calc(var(--s-3) + env(safe-area-inset-bottom));
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto auto;
   grid-template-areas: 'head' 'bench' 'bed' 'tray' 'ctl';
-  gap: 10px;
+  gap: var(--s-3);
 }
 
 .masthead {
   grid-area: head;
-}
-.bench {
-  grid-area: bench;
-}
-.press-bed {
-  grid-area: bed;
-}
-.tray {
-  grid-area: tray;
-}
-.controls {
-  grid-area: ctl;
-}
-
-/* Wide, short viewports (desktop modal): the sheet takes the full height on the left. */
-@media (min-aspect-ratio: 11/10) and (min-width: 600px) {
-  .app {
-    max-width: 1040px;
-    padding: 16px 24px;
-    column-gap: 20px;
-    grid-template-columns: minmax(0, 1fr) clamp(236px, 28vw, 320px);
-    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
-    grid-template-areas:
-      'bed head'
-      'bed bench'
-      'bed .'
-      'bed tray'
-      'bed ctl';
-  }
-  .app .tray {
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .app .stamp {
-    width: 68px;
-    height: 68px;
-  }
-  .app .controls {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.masthead {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
+  padding-bottom: var(--s-2);
   border-bottom: 2px solid var(--ink);
-  padding-bottom: 8px;
+}
+
+.bench {
+  grid-area: bench;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--s-3);
+  align-items: center;
+}
+
+.press-bed {
+  grid-area: bed;
+  min-height: 0;
+  container-type: size;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tray {
+  grid-area: tray;
+  display: flex;
+  justify-content: center;
+  gap: var(--s-3);
+  padding-top: var(--s-1);
+}
+
+.controls {
+  grid-area: ctl;
+  display: grid;
+  grid-template-columns: 1fr 1.3fr 1fr 1.3fr;
+  gap: var(--s-2);
+}
+
+.controls .btn {
+  padding: 0 var(--s-2);
+  white-space: nowrap;
 }
 
 .counter {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  font-family: var(--mono);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
 }
 
 .counter-now {
-  font-size: 28px;
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--t-2xl);
   line-height: 1;
 }
 
 .counter-par {
-  font-size: 12px;
+  font-size: var(--t-xs);
   color: var(--ink-soft);
-}
-
-.bench {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 12px;
-  align-items: center;
 }
 
 .proof {
   margin: 0;
-  width: clamp(76px, 22vw, 110px);
+  width: clamp(76px, 22vw, 104px);
 }
 
 .proof-sheet {
   display: block;
   width: 100%;
-  box-shadow: 0 1px 0 var(--rule), 2px 3px 0 rgba(29, 29, 31, 0.12);
-  transform: rotate(-1.5deg);
+  box-shadow: 0 1px 2px var(--shade), 2px 3px 0 var(--shade);
 }
 
 .proof figcaption {
-  margin-top: 6px;
-  font-family: var(--mono);
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  margin-top: var(--s-1);
+  font-size: var(--t-xs);
   color: var(--ink-soft);
 }
 
@@ -238,69 +318,80 @@ button {
 .hint {
   margin: 0;
   min-height: 2.5em;
-  font-size: 16px;
+  font-size: var(--t-md);
   line-height: 1.25;
+  overflow-wrap: break-word;
 }
 
 .clock {
-  margin: 6px 0 0;
-  font-family: var(--mono);
-  font-size: 12px;
+  margin: var(--s-1) 0 0;
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
   color: var(--ink-soft);
-  min-height: 1em;
+  font-variant-numeric: tabular-nums;
 }
 
-.press-bed {
-  min-height: 0;
-  container-type: size;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* ---------- the sheet: paper, crop marks, grain, ink with a rim ---------- */
 
 .work-sheet {
   display: block;
-  width: min(100cqw - 6px, 100cqh - 6px);
-  height: min(100cqw - 6px, 100cqh - 6px);
-  box-shadow: 0 1px 0 var(--rule), 3px 4px 0 rgba(29, 29, 31, 0.14);
+  width: min(100cqw - 8px, 100cqh - 8px);
+  height: min(100cqw - 8px, 100cqh - 8px);
+  box-shadow:
+    0 1px 2px var(--shade),
+    0 10px 24px -12px var(--shade-deep);
   cursor: crosshair;
 }
 
-.work-sheet.is-done {
-  animation: pull 520ms cubic-bezier(0.2, 0.7, 0.2, 1);
+.sheet-paper {
+  fill: var(--sheet);
 }
 
-@keyframes pull {
-  0% {
-    transform: translateY(0);
-  }
-  35% {
-    transform: translateY(-10px) rotate(-0.8deg);
-  }
-  100% {
-    transform: translateY(0) rotate(0);
-  }
+.sheet-fibre {
+  opacity: 0.1;
+  pointer-events: none;
 }
 
-.fresh-press {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: ink-in 240ms cubic-bezier(0.3, 1.4, 0.5, 1);
+.sheet-grain {
+  opacity: var(--texture-opacity);
+  pointer-events: none;
 }
 
-/* the stamp comes down: a touch large and pale, then lands with full ink */
-@keyframes ink-in {
-  from {
-    opacity: 0.25;
-    transform: scale(1.06);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+.guides line {
+  stroke: var(--rule);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 6;
+}
+
+.guides-strong line {
+  stroke: var(--rule-strong);
+  stroke-dasharray: none;
+  stroke-width: 1.5;
+}
+
+.crop-marks line {
+  stroke: var(--ink);
+  stroke-width: 1.5;
+}
+
+.ink-rim {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: square;
+  mix-blend-mode: multiply;
+  pointer-events: none;
 }
 
 .ghost rect {
+  opacity: 0.45;
+}
+
+.ghost-edge {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 4;
+  stroke-dasharray: 10 8;
+  stroke-linecap: square;
   animation: march 900ms linear infinite;
 }
 
@@ -310,49 +401,182 @@ button {
   }
 }
 
-.tray {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
+.proof-overlay {
+  opacity: 0.9;
 }
+
+/* the press: the block comes down, the ink is there when it lifts */
+.press-block {
+  animation: block var(--dur-press) var(--ease-out) both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.press-block-shadow {
+  fill: var(--shade-deep);
+}
+
+.press-block-wood {
+  stroke: var(--wood-edge);
+  stroke-width: 3;
+}
+
+@keyframes block {
+  0% {
+    opacity: 0;
+    transform: translate(0, -28px) scale(1.08);
+  }
+  30% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  55% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, -36px) scale(1.06);
+  }
+}
+
+.fresh-press {
+  animation: ink-in var(--dur-press) linear both;
+}
+
+@keyframes ink-in {
+  0%,
+  45% {
+    opacity: 0;
+  }
+  55%,
+  100% {
+    opacity: 1;
+  }
+}
+
+.work-sheet.is-done {
+  animation: pull 560ms var(--ease-out);
+}
+
+@keyframes pull {
+  35% {
+    transform: translateY(-10px) rotate(-0.8deg);
+  }
+}
+
+/* ---------- stamp blocks ---------- */
 
 .stamp {
   position: relative;
-  width: 72px;
-  height: 72px;
-  padding: 8px;
-  border: 1.5px solid var(--ink);
-  border-radius: 3px;
-  /* a stained wooden mount */
-  background: linear-gradient(160deg, #dcc8a6, #c9b088);
+  width: 76px;
+  height: 80px;
+  padding: 0;
+  border: 0;
+  background: none;
   cursor: pointer;
-  transition: transform 90ms ease-out;
+  transition: transform var(--dur-short) var(--ease-out);
 }
 
-.stamp svg {
+.block {
+  position: absolute;
+  inset: 0 0 6px;
+  display: flex;
+  flex-direction: column;
+  border-radius: 7px;
+  filter: drop-shadow(0 3px 2px var(--shade)) drop-shadow(0 8px 10px var(--shade));
+  transition: filter var(--dur-short) var(--ease-out);
+}
+
+/* the top of the block: end grain, a bevel, and the paper label with the design on it */
+.block-top {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 7px 7px 3px 3px;
+  border: 1.5px solid var(--wood-edge);
+  background:
+    repeating-linear-gradient(97deg, transparent 0 5px, var(--wood-grain) 5px 6px, transparent 6px 11px),
+    linear-gradient(160deg, var(--wood-hi), var(--wood-lo));
+  box-shadow:
+    inset 0 2px 0 var(--bevel-hi),
+    inset 0 -2px 0 var(--bevel-lo);
+}
+
+.block-label {
+  width: 78%;
+  height: 78%;
+  display: grid;
+  place-items: center;
+  padding: var(--s-1);
+  border-radius: 2px;
+  background: var(--label);
+  box-shadow: 0 0 0 1px var(--wood-edge);
+}
+
+.stamp-glyph {
+  display: block;
   width: 100%;
   height: 100%;
-  display: block;
+}
+
+/* the rubber, inked, showing under the front edge of the block */
+.block-lip {
+  height: 6px;
+  margin: 0 var(--s-1);
+  border-radius: 0 0 3px 3px;
+  background: var(--rubber);
+  border: 1px solid var(--wood-edge);
+  border-top: 0;
 }
 
 .stamp.is-selected {
-  transform: translateY(-6px);
-  box-shadow: 0 6px 0 -2px var(--ink);
+  transform: translateY(-8px);
+}
+
+.stamp.is-selected .block {
+  filter: drop-shadow(0 6px 3px var(--shade)) drop-shadow(0 18px 14px var(--shade-deep));
+}
+
+.stamp.is-selected::after {
+  content: '';
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: -10px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--ink);
 }
 
 .stamp-uses {
   position: absolute;
-  right: 3px;
-  bottom: 2px;
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--ink);
+  top: -6px;
+  right: -6px;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 var(--s-1);
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: var(--ink);
+  color: var(--sheet);
+  font-family: var(--font-mono);
+  font-size: var(--t-xs);
+  font-variant-numeric: tabular-nums;
 }
 
-.controls {
-  display: grid;
-  grid-template-columns: 1fr 1.3fr 1fr 1.4fr;
-  gap: 8px;
+/* ---------- onboarding: a soft pulse on what to touch next ---------- */
+
+.coach .stamp .block,
+svg.coach {
+  animation: coach 1.6s ease-in-out infinite;
+}
+
+@keyframes coach {
+  50% {
+    transform: translateY(-3px);
+  }
 }
 
 /* ---------- result card ---------- */
@@ -360,21 +584,22 @@ button {
 .scrim {
   position: fixed;
   inset: 0;
-  background: rgba(29, 29, 31, 0.32);
+  background: var(--scrim);
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding: 16px;
+  padding: var(--s-4);
   z-index: 10;
 }
 
 .result {
-  width: min(440px, calc(100vw - 32px));
-  background: var(--paper-hi);
+  width: min(440px, calc(100dvw - 32px));
+  background: var(--sheet);
   border: 2px solid var(--ink);
-  box-shadow: 5px 5px 0 var(--blue);
-  padding: 18px 18px 16px;
-  animation: slide 260ms cubic-bezier(0.2, 0.7, 0.2, 1);
+  border-radius: var(--radius);
+  box-shadow: 5px 5px 0 var(--accent);
+  padding: var(--s-4);
+  animation: slide 260ms var(--ease-out);
 }
 
 @keyframes slide {
@@ -386,148 +611,105 @@ button {
 
 .result-kicker {
   margin: 0;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: var(--t-sm);
   color: var(--ink-soft);
 }
 
 .result-title {
-  margin: 6px 0 10px;
-  font-size: 34px;
+  margin: var(--s-1) 0 var(--s-3);
+  font-size: var(--t-3xl);
   font-weight: 800;
   line-height: 1;
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: var(--s-3);
   flex-wrap: wrap;
 }
 
 .result-par {
-  font-size: 15px;
-  font-weight: 500;
-  padding: 2px 8px;
+  font-size: var(--t-sm);
+  font-weight: 700;
+  padding: var(--s-1) var(--s-2);
   border: 1.5px solid var(--ink);
+  border-radius: var(--radius);
 }
 
 .result-par.is-par {
-  background: var(--yellow);
+  background: var(--ink-yellow);
 }
 
 .strip {
   display: flex;
-  gap: 4px;
+  gap: var(--s-1);
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: var(--s-3);
 }
 
 .result-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin: 0 0 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--s-2);
+  margin: 0 0 var(--s-3);
   border-top: 1.5px solid var(--ink);
   border-bottom: 1.5px solid var(--ink);
-  padding: 8px 0;
+  padding: var(--s-2) 0;
 }
 
 .result-stats dt {
-  font-family: var(--mono);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: var(--t-xs);
   color: var(--ink-soft);
 }
 
 .result-stats dd {
   margin: 2px 0 0;
-  font-size: 22px;
+  font-size: var(--t-xl);
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
-.result-note {
-  margin: 0 0 12px;
-  font-size: 14px;
+.result-note,
+.result-next {
+  margin: 0 0 var(--s-2);
+  font-size: var(--t-sm);
   color: var(--ink-soft);
 }
 
 .result-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--s-2);
   justify-content: flex-end;
   flex-wrap: wrap;
+  margin-top: var(--s-3);
 }
 
 .result-fine {
-  margin: 10px 0 0;
-  font-size: 12px;
+  margin: var(--s-3) 0 0;
+  font-size: var(--t-xs);
   color: var(--ink-soft);
   text-align: right;
 }
-
-/* ---------- onboarding: a soft pulse on what to touch next ---------- */
-
-.coach .stamp,
-svg.coach {
-  animation: coach 1.6s ease-in-out infinite;
-}
-
-@keyframes coach {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(31, 111, 184, 0);
-  }
-  50% {
-    box-shadow: 0 0 0 5px rgba(31, 111, 184, 0.45);
-  }
-}
-
-/* ---------- titles ---------- */
 
 .title-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  margin: 0 0 10px;
-  padding-bottom: 10px;
-  border-bottom: 1.5px dashed var(--rule);
+  gap: var(--s-3);
+  margin: 0 0 var(--s-3);
+  padding-bottom: var(--s-3);
+  border-bottom: 1.5px dashed var(--rule-strong);
 }
 
-.title-label {
+.title-label,
+.title-next {
   margin: 0;
-  font-family: var(--mono);
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font-size: var(--t-xs);
   color: var(--ink-soft);
 }
 
 .title-name {
-  margin: 2px 0 0;
-  font-size: 20px;
+  margin: 2px 0;
+  font-size: var(--t-lg);
   font-weight: 800;
-}
-
-.title-next {
-  margin: 2px 0 0;
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-
-.btn-small {
-  height: 36px;
-  font-size: 14px;
-  padding: 0 10px;
-  white-space: nowrap;
-}
-
-.result-next {
-  margin: 0 0 12px;
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--ink-soft);
 }
 
 /* ---------- splash (inline post): the puzzle is the headline ---------- */
@@ -538,59 +720,62 @@ svg.coach {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: clamp(8px, 2.2vh, 14px);
-  padding: 12px 16px;
+  gap: clamp(8px, 2.2vh, 16px);
+  padding: var(--s-3) var(--s-4);
   text-align: center;
 }
 
 .splash-mast {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: var(--s-3);
 }
 
 .wordmark-sm {
-  font-size: 15px;
-  text-shadow: 1px 1px 0 var(--red);
+  font-size: var(--t-md);
+  text-shadow: 1px 1px 0 var(--accent);
 }
 
 .splash-mast .issue {
   margin: 0;
-  font-size: 11px;
 }
 
 .splash-challenge {
   margin: 0;
-  font-size: clamp(20px, 5.6vw, 28px);
+  font-size: clamp(20px, 5.6vw, var(--t-2xl));
   font-weight: 800;
   line-height: 1.1;
   letter-spacing: -0.01em;
   max-width: 22ch;
+  overflow-wrap: break-word;
+  min-width: 0;
 }
 
 .splash-par {
   display: inline-block;
-  margin-left: 8px;
-  padding: 1px 8px 2px;
+  margin-left: var(--s-2);
+  padding: 1px var(--s-2) 2px;
   font-size: 0.72em;
   vertical-align: 0.12em;
-  background: var(--yellow);
+  background: var(--ink-yellow);
   border: 1.5px solid var(--ink);
+  border-radius: var(--radius);
 }
 
 .equation {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: clamp(8px, 3vw, 18px);
+  gap: clamp(8px, 3vw, 16px);
 }
 
 .splash-sheet {
   display: block;
   width: min(44vw, 40vh, 230px);
   height: min(44vw, 40vh, 230px);
-  border: 2px solid var(--ink);
-  box-shadow: 3px 3px 0 rgba(29, 29, 31, 0.18);
+  box-shadow:
+    0 1px 2px var(--shade),
+    0 10px 20px -10px var(--shade-deep);
 }
 
 .eq-op {
@@ -603,7 +788,7 @@ svg.coach {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: var(--s-2);
 }
 
 .eq-stamps {
@@ -612,7 +797,7 @@ svg.coach {
   padding: 0;
   display: grid;
   grid-template-columns: repeat(2, auto);
-  gap: 6px;
+  gap: var(--s-2);
 }
 
 .eq-stamps.n2 {
@@ -620,39 +805,34 @@ svg.coach {
 }
 
 .eq-stamp {
-  width: min(16vw, 13vh, 62px);
-  height: min(16vw, 13vh, 62px);
-  padding: 6px;
-  border: 1.5px solid var(--ink);
-  border-radius: 3px;
-  background: linear-gradient(160deg, #dcc8a6, #c9b088);
-}
-
-.eq-stamp svg {
-  display: block;
-  width: 100%;
-  height: 100%;
+  position: relative;
+  width: min(17vw, 15vh, 76px);
+  height: min(18vw, 16vh, 80px);
 }
 
 .eq-presses {
   margin: 0;
-  font-family: var(--mono);
-  font-size: 13px;
+  font-size: var(--t-sm);
+  color: var(--ink-soft);
 }
 
 .eq-presses b {
-  font-family: var(--display);
-  font-size: 20px;
+  font-size: var(--t-xl);
+  font-weight: 800;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
 }
 
 .splash-meta {
   margin: 0;
-  font-family: var(--mono);
-  font-size: 12px;
+  font-size: var(--t-sm);
   color: var(--ink-soft);
+  display: flex;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-/* wide inline posts (desktop feed): stamps sit in one row */
 @media (min-width: 560px) {
   .eq-stamps,
   .eq-stamps.n2 {
@@ -666,11 +846,45 @@ svg.coach {
   }
 }
 
+/* Wide, short viewports (desktop modal): the sheet takes the full height on the left. */
+@media (min-aspect-ratio: 11/10) and (min-width: 600px) {
+  .app {
+    max-width: 1040px;
+    padding: var(--s-4) var(--s-5);
+    column-gap: var(--s-5);
+    grid-template-columns: minmax(0, 1fr) clamp(250px, 30vw, 330px);
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      'bed head'
+      'bed bench'
+      'bed .'
+      'bed tray'
+      'bed ctl';
+  }
+  .app .tray {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+  .app .controls {
+    grid-template-columns: 1fr 1fr;
+  }
+  .app .tray {
+    gap: var(--s-2);
+  }
+  .app .stamp {
+    width: 70px;
+    height: 74px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
     animation: none !important;
     transition: none !important;
+  }
+  .press-block {
+    display: none;
   }
 }
